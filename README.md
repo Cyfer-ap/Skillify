@@ -75,8 +75,9 @@ RAZORPAY_KEY_SECRET=your-razorpay-secret
 4. **Run migrations and start server**
 
 ```bash
+pyhton manage.py makemigrations
 python manage.py migrate
-python manage.py runserver
+python manage.py runserver 
 ```
 
 ---
