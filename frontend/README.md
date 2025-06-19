@@ -1,20 +1,13 @@
 # 🎨 Frontend — Skillify Tutoring Platform
 
-This directory contains the frontend application of **Skillify**, built using **React** and styled with **Tailwind CSS**. It consumes backend APIs via REST and WebSockets, offering a smooth and modern user experience for both students and tutors.
+This directory contains the frontend application of **Skillify**, built using **React** and styled with **Bootstrap**. It consumes backend APIs via REST and WebSockets, offering a smooth and modern user experience for both students and tutors.
 
 ---
 {
  BY REETESH - :
 
-
+    BASIC REQUIREMENT : HTML , CSS , JS , REACT , BOOTSTRAP .
 }
-
-
-
-
-
-
-
 
 ## 🎯 Main Features
 
@@ -30,8 +23,9 @@ This directory contains the frontend application of **Skillify**, built using **
 
 ---
 
+-----------------------------------------------------------------------------------------
 ## 🧱 Structure Overview
-
+ 
 ```
 frontend/
 ├── src/
@@ -44,11 +38,19 @@ frontend/
 │ ├── assets/ # Icons, images, logos
 │ └── App.jsx # Main component
 ├── public/ # index.html, favicon, etc.
-├── tailwind.config.js
+├── bootstrap.config.js
 ├── vite.config.js / webpack.config.js
 └── package.json
+
+yaml
+Copy
+Edit
+
+
 ```
 
+
+-----------------------------------------------------------------------------------------
 
 ---
 
@@ -57,7 +59,7 @@ frontend/
 - React (SPA architecture)
 - React Router DOM
 - Axios (API calls)
-- Tailwind CSS (utility-first styling)
+- Bootstrap (component-based styling)
 - Zustand / Context API (state management)
 - Firebase (push notifications)
 - Razorpay / Stripe (payments)
@@ -66,5 +68,3 @@ frontend/
 ---
 
 Refer to the root-level `README.md` for setup, environment variables, and development instructions.
-
-
