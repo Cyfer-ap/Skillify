@@ -1,23 +1,33 @@
 from rest_framework import serializers
 from .models import CustomUser
-from django.contrib.auth import get_user_model
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-User = get_user_model()
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token['role'] = user.role
+        return token
+
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
+    password1 = serializers.CharField(write_only=True)
+    password2 = serializers.CharField(write_only=True)
 
     class Meta:
-        model = User
-        fields = ['username', 'email', 'password', 'role', 'phone', 'bio']
+        model = CustomUser
+        fields = ['username', 'email', 'role', 'phone', 'bio', 'password1', 'password2']
+
+    def validate(self, data):
+        if data['password1'] != data['password2']:
+            raise serializers.ValidationError("Passwords do not match.")
+        return data
 
     def create(self, validated_data):
-        user = User.objects.create_user(
-            username=validated_data['username'],
-            email=validated_data['email'],
-            password=validated_data['password'],
-            role=validated_data['role'],
-            phone=validated_data.get('phone', ''),
-            bio=validated_data.get('bio', '')
-        )
+        password = validated_data.pop('password1')
+        validated_data.pop('password2')
+        user = CustomUser(**validated_data)
+        user.set_password(password)
+        user.save()
         return user
+

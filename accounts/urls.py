@@ -1,13 +1,17 @@
 from django.urls import path
-from . import views
+from .views import (
+    home_view,
+    RegisterAPIView,
+    DashboardRedirectView,
+    StudentDashboardView,
+    TeacherDashboardView, MyTokenObtainPairView,
+)
 
 urlpatterns = [
-    path('', views.home_view, name='home'),
-    path('register/', views.register_view, name='register'),
-    path('login/', views.login_view, name='login'),
-    path('logout/', views.logout_view, name='logout'),
-    path('dashboard/', views.dashboard_redirect, name='dashboard_redirect'),
-    path('dashboard/student/', views.student_dashboard, name='student_dashboard'),
-    path('dashboard/teacher/', views.teacher_dashboard, name='teacher_dashboard'),
-
+    path('', home_view, name='home'),
+    path('register/', RegisterAPIView.as_view(), name='register_api'),
+    path('login/', MyTokenObtainPairView.as_view(), name='login_api'),
+    path('dashboard/', DashboardRedirectView.as_view(), name='dashboard_redirect'),
+    path('dashboard/student/', StudentDashboardView.as_view(), name='student_dashboard'),
+    path('dashboard/teacher/', TeacherDashboardView.as_view(), name='teacher_dashboard'),
 ]
