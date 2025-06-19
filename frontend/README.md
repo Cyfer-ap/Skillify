@@ -3,6 +3,18 @@
 This directory contains the frontend application of **Skillify**, built using **React** and styled with **Tailwind CSS**. It consumes backend APIs via REST and WebSockets, offering a smooth and modern user experience for both students and tutors.
 
 ---
+{
+ BY REETESH - :
+
+
+}
+
+
+
+
+
+
+
 
 ## 🎯 Main Features
 
