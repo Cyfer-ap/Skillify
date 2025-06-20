@@ -1,0 +1,5 @@
+.welcome-bg {
+  background: linear-gradient(to bottom right, #007bff, #3399ff);
+  height: 100%;
+  text-align: center;
+}

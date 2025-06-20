@@ -1,5 +1,7 @@
 // src/pages/Home.jsx
 import { Link } from "react-router-dom";
+import StudentDashboard from "./StudentDashboard";
+
 
 const Home = () => {
   return (
@@ -9,8 +11,8 @@ const Home = () => {
         Real-time 1-on-1 tutoring, instant booking, and collaborative learning tools.
       </p>
       <div className="space-x-4">
-        <Link to="/login" className="bg-green-600 text-white px-4 py-2 rounded">Login</Link>
-        <Link to="/register" className="bg-blue-600 text-white px-4 py-2 rounded">Register</Link>
+        <Link to="/login" className="bg-green-600 text-black px-4 py-2 rounded">Login</Link>
+        <Link to="/register" className="bg-blue-600 text-black px-4 py-2 rounded">Register</Link>
       </div>
     </div>
   );
