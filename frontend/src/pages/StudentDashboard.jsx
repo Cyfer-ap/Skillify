@@ -25,6 +25,8 @@ const StudentDashboard = () => {
       </p>
         <ul className="list-disc list-inside space-y-2 text-gray-800">
             <li><Link to="/student/profile">👤 Profile</Link></li>
+            <li><Link to="/student/teachers" className="text-blue-600 underline">Browse Tutors</Link></li>
+            <li><Link to="/student/bookings" className="text-green-600 underline">My Bookings</Link></li>
             <li>👩‍🏫 Connect with tutors</li>
             <TutorsList/>
 

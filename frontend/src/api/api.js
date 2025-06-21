@@ -1,24 +1,48 @@
 import axios from 'axios';
 
-const API = axios.create({
+// 🔐 AUTH & PROFILE API (accounts-related)
+const AccountsAPI = axios.create({
   baseURL: 'http://127.0.0.1:8000/api/accounts/',
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: false  // ✅ Set to true ONLY if using session auth (not needed for JWT)
+  withCredentials: false,
 });
 
-// ✅ Attach Bearer token for protected requests
-API.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-}, (error) => {
-  return Promise.reject(error);
+// 📅 BOOKINGS API
+const BookingsAPI = axios.create({
+  baseURL: 'http://127.0.0.1:8000/api/bookings/',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  withCredentials: false,
 });
 
-// ✅ Auth endpoints (exported)
-export const registerUser = (data) => API.post('register/', data);
-export const loginUser = (credentials) => API.post('login/', credentials);
+// ✅ Attach Bearer token to both
+[AccountsAPI, BookingsAPI].forEach((api) => {
+  api.interceptors.request.use((config) => {
+    const token = localStorage.getItem('access');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  }, (error) => {
+    return Promise.reject(error);
+  });
+});
+
+
+// -----------------------------
+// ✅ Exported Auth Endpoints
+// -----------------------------
+export const registerUser = (data) => AccountsAPI.post('register/', data);
+export const loginUser = (credentials) => AccountsAPI.post('login/', credentials);
+
+// -----------------------------
+// ✅ Booking System Endpoints
+// -----------------------------
+export const fetchTeachers = () => BookingsAPI.get('teachers/');
+export const fetchAvailability = (teacherId) => BookingsAPI.get(`availability/${teacherId}/`);
+export const bookSession = (data) => BookingsAPI.post('book/', data);
+export const fetchMyBookings = () => BookingsAPI.get('my/');
+export const updateSessionStatus = (id, status) => BookingsAPI.patch(`update/${id}/`, { status });

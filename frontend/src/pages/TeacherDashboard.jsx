@@ -9,6 +9,7 @@ const TeacherDashboard = () => {
       <p className="text-gray-700 mb-6">Welcome to your teaching panel. From here, you can:</p>
         <ul className="list-disc list-inside space-y-2 text-gray-800">
             <li><Link to="/teacher/profile">👤 Profile</Link></li>
+            <li><Link to="/teacher/bookings" className="text-blue-600 underline">My Teaching Sessions</Link></li>
             <li>📅 Manage your tutoring schedule</li>
             <li>💬 Join upcoming live sessions</li>
             <li>📄 Upload resources, notes, or homework</li>
