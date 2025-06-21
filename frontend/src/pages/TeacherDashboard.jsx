@@ -16,13 +16,33 @@ const TeacherDashboard = () => {
       </p>
       <ul className="list-disc list-inside space-y-2 text-gray-800">
         <li>
-          <Link to="/teacher/profile">👤 Profile</Link>
+          <Link
+            to="/teacher/profile"
+            className="btn btn-primary"
+            style={{ margin: "5px" }}
+          >
+            👤 Profile
+          </Link>
         </li>
         <li>
-          <Link to="/teacher/bookings" className="text-blue-600 underline">
+          <Link
+            to="/teacher/bookings"
+            className="btn btn-primary"
+            style={{ margin: "5px" }}
+          >
             My Teaching Sessions
           </Link>
         </li>
+        <li>
+          <Link
+            to="/teacher/availability"
+            className="btn btn-primary"
+            style={{ margin: "5px" }}
+          >
+            ➕ Create Availability Slot
+          </Link>
+        </li>
+
         <li>
           📅 Manage your tutoring schedule
           <TeacherSchedule />
