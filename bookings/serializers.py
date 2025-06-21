@@ -11,12 +11,15 @@ class TeacherSerializer(serializers.ModelSerializer):
 class AvailabilitySerializer(serializers.ModelSerializer):
     class Meta:
         model = Availability
-        fields = ['id', 'date', 'start_time', 'end_time']
+        fields = '__all__'
+        read_only_fields = ['teacher']
 
     def validate(self, data):
         if data['start_time'] >= data['end_time']:
             raise serializers.ValidationError("End time must be after start time.")
         return data
+
+
 
 
 # ✅ Serializer for GET responses
