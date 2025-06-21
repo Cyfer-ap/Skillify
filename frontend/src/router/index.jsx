@@ -9,7 +9,8 @@ import Profile from "../pages/Profile";
 import BrowseTeachers from "../pages/BrowseTeachers";
 import BookSessionForm from "../pages/BookSessionForm";
 import MyBookings from "../pages/MyBookings";
-import TeacherAvailabilityForm from "../pages/TeacherAvailabilityForm";  // ✅ NEW IMPORT
+import TeacherAvailabilityForm from "../pages/TeacherAvailabilityForm"; // ✅ NEW IMPORT
+import TutorsList from "../components/TutorsList";
 
 const router = createBrowserRouter([
   {
@@ -31,9 +32,9 @@ const router = createBrowserRouter([
       { path: "teacher/dashboard", element: <TeacherDashboard /> },
       { path: "teacher/profile", element: <Profile /> },
       { path: "teacher/bookings", element: <MyBookings /> },
-      { path: "teacher/availability", element: <TeacherAvailabilityForm /> },  // ✅ NEW ROUTE
-    ]
-  }
+      { path: "teacher/availability", element: <TeacherAvailabilityForm /> }, // ✅ NEW ROUTE
+    ],
+  },
 ]);
 
 export default router;
