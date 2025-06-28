@@ -1,49 +1,136 @@
-// src/layouts/BaseLayout.jsx
-import { useState } from "react";
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Outlet, useLocation } from "react-router-dom";
 
 const BaseLayout = () => {
   const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const isDashboard = location.pathname.includes("/dashboard");
 
+  // 💡 Prevent body scroll when sidebar is open
+  useEffect(() => {
+    document.body.style.margin = "0";
+    document.body.style.padding = "0";
+    document.body.style.overflow = "hidden"; // <== VERY IMPORTANT
+    document.documentElement.style.overflow = "hidden"; // HTML tag too
+  }, []);
+
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100vh", // full viewport
+        overflow: "hidden", // Prevent outer scroll
+      }}
+    >
       {/* HEADER */}
-      <header className="bg-indigo-700 text-white p-4 flex justify-between items-center shadow-md">
-        <h1 className="text-2xl font-bold">Skillify</h1>
+      <header
+        style={{
+          backgroundColor: "#4338ca",
+          color: "white",
+          padding: "16px",
+          display: "flex",
+          alignItems: "center",
+          gap: "16px",
+          flexShrink: 0,
+        }}
+      >
         {isDashboard && (
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="bg-indigo-600 hover:bg-indigo-500 px-3 py-1 rounded transition"
+            style={{
+              backgroundColor: "#4f46e5",
+              color: "white",
+              padding: "6px 12px",
+              borderRadius: "6px",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "18px",
+              lineHeight: "1",
+            }}
           >
-            {sidebarOpen ? "Hide Menu" : "Show Menu"}
+            ⋮
           </button>
         )}
+        <h1 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>Skillify</h1>
       </header>
 
-      {/* BODY CONTAINER: SIDEBAR + MAIN */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* SIDEBAR */}
-        {isDashboard && sidebarOpen && (
-          <aside className="w-64 bg-gray-100 border-r border-gray-300 p-4 flex-shrink-0 overflow-y-auto">
-            <h2 className="text-lg font-semibold mb-4">📂 Menu</h2>
-            <ul className="space-y-3 text-gray-800 text-sm">
-              <li className="hover:text-indigo-600 cursor-pointer">📅 My Sessions</li>
-              <li className="hover:text-indigo-600 cursor-pointer">📄 My Notes</li>
-              <li className="hover:text-indigo-600 cursor-pointer">👨‍🏫 Browse Tutors</li>
+      {/* SIDEBAR Overlay */}
+      {isDashboard && sidebarOpen && (
+        <>
+          <div
+            onClick={() => setSidebarOpen(false)}
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.4)",
+              zIndex: 40,
+            }}
+          ></div>
+
+          <aside
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              height: "100%",
+              width: "250px",
+              backgroundColor: "#ffffff",
+              padding: "24px",
+              boxShadow: "2px 0 6px rgba(0,0,0,0.1)",
+              zIndex: 50,
+            }}
+          >
+            <h2
+              style={{
+                fontSize: "1.125rem",
+                fontWeight: 600,
+                marginBottom: "1rem",
+              }}
+            >
+              📂 Menu
+            </h2>
+            <ul
+              style={{
+                listStyle: "none",
+                padding: 0,
+                margin: 0,
+                color: "#1f2937",
+                fontSize: "0.875rem",
+              }}
+            >
+              <li style={linkStyle}>📅 My Sessions</li>
+              <li style={linkStyle}>📄 My Notes</li>
+              <li style={linkStyle}>👨‍🏫 Browse Tutors</li>
             </ul>
           </aside>
-        )}
+        </>
+      )}
 
-        {/* MAIN CONTENT */}
-        <main className="flex-1 overflow-y-auto p-6 bg-gray-50">
-          <Outlet />
-        </main>
-      </div>
+      {/* MAIN SCROLLABLE CONTENT */}
+      <main
+        style={{
+          flex: 1,
+          overflowY: "auto", // only this scrolls
+          padding: "24px",
+          backgroundColor: "lightblue",
+          scrollbarWidth: "none", // Firefox
+          msOverflowStyle: "none", // IE/Edge
+        }}
+      >
+        <Outlet />
+      </main>
     </div>
   );
+};
+
+const linkStyle = {
+  marginBottom: "12px",
+  cursor: "pointer",
+  transition: "color 0.3s ease",
 };
 
 export default BaseLayout;
