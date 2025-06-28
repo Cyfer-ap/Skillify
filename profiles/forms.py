@@ -17,37 +17,17 @@ class BaseOptionalForm(forms.ModelForm):
         return cleaned_data
 
 
-class TeacherProfileForm(BaseOptionalForm):
+class TeacherProfileForm(forms.ModelForm):
     class Meta:
         model = TeacherProfile
-        fields = '__all__'
+        exclude = ['user']
+        widgets = {
+            'dob': forms.DateInput(attrs={'type': 'date'}),
+            'bio': forms.Textarea(attrs={'rows': 3}),
+            'certifications': forms.Textarea(attrs={'rows': 2}),
+            'availability_schedule': forms.Textarea(attrs={'placeholder': 'e.g., {"monday": "9-11am"}'}),
+        }
 
-    def clean_subjects(self):
-        raw = self.cleaned_data.get('subjects')
-        if isinstance(raw, str):
-            return [s.strip() for s in raw.split(',') if s.strip()]
-        return raw
-
-    def clean_languages(self):
-        raw = self.cleaned_data.get('languages')
-        if isinstance(raw, str):
-            return [s.strip() for s in raw.split(',') if s.strip()]
-        return raw
-
-    def clean_grade_levels(self):
-        raw = self.cleaned_data.get('grade_levels')
-        if isinstance(raw, str):
-            return [s.strip() for s in raw.split(',') if s.strip()]
-        return raw
-
-    def clean_availability(self):
-        raw = self.cleaned_data.get('availability')
-        if isinstance(raw, str):
-            try:
-                return json.loads(raw)
-            except Exception:
-                return {}
-        return raw
 
 
 class StudentProfileForm(BaseOptionalForm):

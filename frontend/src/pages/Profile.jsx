@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-const Profile = () => {
-  const [profile, setProfile] = useState(null);
-  const [editMode, setEditMode] = useState(false);
+const StudentProfile = () => {
   const [form, setForm] = useState({});
-  const [loading, setLoading] = useState(true);
+  const [editMode, setEditMode] = useState(false);
+  const [message, setMessage] = useState("");
   const token = localStorage.getItem("access");
 
   useEffect(() => {
@@ -13,285 +12,104 @@ const Profile = () => {
       .get("http://127.0.0.1:8000/api/profile/", {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((res) => {
-        setProfile(res.data);
-        setForm(res.data);
-        setEditMode(Object.keys(res.data).length <= 1); // auto-enable edit if data is mostly empty
-      })
-      .catch((err) => {
-        console.warn(
-          "No profile found or fetch failed. Initializing empty form."
-        );
-        setEditMode(true);
+      .then((res) => setForm(res.data))
+      .catch(() => {
+        console.warn("No profile found or fetch failed. Initializing empty form.");
         setForm({});
-      })
-      .finally(() => setLoading(false));
+      });
   }, []);
 
   const handleChange = (e) => {
-    const { name, type, value, files } = e.target;
+    const { name, value, type, checked, files } = e.target;
     if (type === "file") {
-      setForm({ ...form, [name]: files[0] });
+      setForm((prev) => ({ ...prev, [name]: files[0] }));
+    } else if (type === "checkbox") {
+      setForm((prev) => ({ ...prev, [name]: checked }));
     } else {
-      setForm({ ...form, [name]: value });
+      setForm((prev) => ({ ...prev, [name]: value }));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage("");
+
     const formData = new FormData();
     for (let key in form) {
-      if (form[key] !== undefined && form[key] !== null) {
-        formData.append(key, form[key]);
-      }
+      if (form[key]) formData.append(key, form[key]);
     }
 
     try {
-      const res = await axios.put(
-        "http://127.0.0.1:8000/api/profile/",
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-      alert("✅ Profile saved successfully!");
-      setProfile(res.data);
+      await axios.put("http://127.0.0.1:8000/api/profile/", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      setMessage("✅ Profile updated!");
       setEditMode(false);
     } catch (err) {
-      console.error(err.response?.data || err.message);
-      alert("❌ Update failed. Check required fields.");
+      console.error(err);
+      setMessage("❌ Update failed. Check required fields.");
     }
   };
 
-  if (loading) return <p className="p-4">Loading profile...</p>;
-
-  const isTeacher = profile?.rate !== undefined || form?.rate !== undefined;
-
   return (
-    <div
-      style={{
-        padding: "20px",
-        margin: "0 auto",
-        display: "block",
-      }}
-    >
-      <h2 className="text-2xl font-bold mb-4">My Profile</h2>
+    <div className="max-w-4xl mx-auto p-4">
+      <h2 className="text-2xl font-bold mb-4">Student Profile</h2>
+      {message && <p className="text-sm mb-2 text-red-600">{message}</p>}
 
-      {!editMode && profile ? (
-        <>
-          <pre className="bg-gray-100 p-4 rounded whitespace-pre-wrap text-sm">
-            {JSON.stringify(profile, null, 2)}
-          </pre>
-          <button
-            onClick={() => setEditMode(true)}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded"
-          >
+      {!editMode ? (
+        <div>
+          <button onClick={() => setEditMode(true)} className="bg-blue-600 text-white px-4 py-2 rounded mb-4">
             Edit Profile
           </button>
-        </>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <p><strong>Full Name:</strong> {form.full_name || "N/A"}</p>
+            <p><strong>Guardian Name:</strong> {form.guardian_name || "N/A"}</p>
+            <p><strong>Gender:</strong> {form.gender || "N/A"}</p>
+            <p><strong>DOB:</strong> {form.dob || "N/A"}</p>
+            <p><strong>Location:</strong> {form.location || "N/A"}</p>
+            <p><strong>Subjects of Interest:</strong> {Array.isArray(form.subjects_interest) ? form.subjects_interest.join(", ") : form.subjects_interest || "N/A"}</p>
+            <p><strong>Grade Level:</strong> {form.grade_level || "N/A"}</p>
+            <p><strong>Preferred Languages:</strong> {Array.isArray(form.preferred_languages) ? form.preferred_languages.join(", ") : form.preferred_languages || "N/A"}</p>
+            <p><strong>Learning Mode:</strong> {form.learning_mode || "N/A"}</p>
+            <p><strong>Goals:</strong> {form.goals || "N/A"}</p>
+            <p><strong>Preferred Time Slots:</strong> {Array.isArray(form.time_slots) ? form.time_slots.join(", ") : form.time_slots || "N/A"}</p>
+            <p><strong>Payment Methods:</strong> {Array.isArray(form.payment_methods) ? form.payment_methods.join(", ") : form.payment_methods || "N/A"}</p>
+          </div>
+        </div>
       ) : (
-        <form
-          onSubmit={handleSubmit}
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "16px",
-            maxWidth: "600px",
-          }}
-        >
-          <h3 className="text-lg font-semibold">Basic Details</h3>
-          <input
-            type="text"
-            name="full_name"
-            value={form.full_name || ""}
-            onChange={handleChange}
-            placeholder="Full Name"
-            className="input"
-          />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input type="text" name="full_name" value={form.full_name || ""} onChange={handleChange} placeholder="Full Name" className="w-full border p-2" />
           <input type="file" name="profile_picture" onChange={handleChange} />
-          <input
-            type="text"
-            name="gender"
-            value={form.gender || ""}
-            onChange={handleChange}
-            placeholder="Gender"
-            className="input"
-          />
-          <input
-            type="date"
-            name="dob"
-            value={form.dob || ""}
-            onChange={handleChange}
-            className="input"
-          />
-          <input
-            type="text"
-            name="location"
-            value={form.location || ""}
-            onChange={handleChange}
-            placeholder="Location"
-            className="input"
-          />
-          {isTeacher ? (
-            <>
-              <h3 className="text-lg font-semibold">Professional Info</h3>
-              <input
-                type="text"
-                name="subjects"
-                value={form.subjects || ""}
-                onChange={handleChange}
-                placeholder="Subjects (comma-separated)"
-                className="input"
-              />
-              <input
-                type="text"
-                name="grade_levels"
-                value={form.grade_levels || ""}
-                onChange={handleChange}
-                placeholder="Grade Levels"
-                className="input"
-              />
-              <input
-                type="text"
-                name="languages"
-                value={form.languages || ""}
-                onChange={handleChange}
-                placeholder="Languages"
-                className="input"
-              />
-              <textarea
-                name="experience"
-                value={form.experience || ""}
-                onChange={handleChange}
-                placeholder="Experience"
-                className="input"
-              />
-              <textarea
-                name="certifications"
-                value={form.certifications || ""}
-                onChange={handleChange}
-                placeholder="Certifications"
-                className="input"
-              />
-              <input
-                type="text"
-                name="availability"
-                value={form.availability || ""}
-                onChange={handleChange}
-                placeholder="Availability Schedule"
-                className="input"
-              />
-              <input
-                type="number"
-                name="rate"
-                value={form.rate || ""}
-                onChange={handleChange}
-                placeholder="Hourly Rate"
-                className="input"
-              />
-              <select
-                name="mode"
-                value={form.mode || ""}
-                onChange={handleChange}
-                className="input"
-              >
-                <option value="">Select Mode</option>
-                <option value="online">Online</option>
-                <option value="offline">In-person</option>
-                <option value="hybrid">Hybrid</option>
-              </select>
-              <textarea
-                name="bio"
-                value={form.bio || ""}
-                onChange={handleChange}
-                placeholder="Bio"
-                className="input"
-              />
-            </>
-          ) : (
-            <>
-              <h3 className="text-lg font-semibold">Learning Preferences</h3>
-              <input
-                type="text"
-                name="guardian_name"
-                value={form.guardian_name || ""}
-                onChange={handleChange}
-                placeholder="Guardian Name"
-                className="input"
-              />
-              <input
-                type="text"
-                name="subjects_interest"
-                value={form.subjects_interest || ""}
-                onChange={handleChange}
-                placeholder="Subjects of Interest"
-                className="input"
-              />
-              <input
-                type="text"
-                name="grade_level"
-                value={form.grade_level || ""}
-                onChange={handleChange}
-                placeholder="Grade Level"
-                className="input"
-              />
-              <textarea
-                name="goals"
-                value={form.goals || ""}
-                onChange={handleChange}
-                placeholder="Learning Goals"
-                className="input"
-              />
-              <input
-                type="text"
-                name="preferred_languages"
-                value={form.preferred_languages || ""}
-                onChange={handleChange}
-                placeholder="Preferred Languages"
-                className="input"
-              />
-              <input
-                type="text"
-                name="time_slots"
-                value={form.time_slots || ""}
-                onChange={handleChange}
-                placeholder="Preferred Time Slots"
-                className="input"
-              />
-              <select
-                name="learning_mode"
-                value={form.learning_mode || ""}
-                onChange={handleChange}
-                className="input"
-              >
-                <option value="">Select Mode</option>
-                <option value="online">Online</option>
-                <option value="offline">In-person</option>
-                <option value="hybrid">Hybrid</option>
-              </select>
-              <input
-                type="text"
-                name="payment_methods"
-                value={form.payment_methods || ""}
-                onChange={handleChange}
-                placeholder="Payment Methods"
-                className="input"
-              />
-            </>
-          )}
-          <button
-            type="submit"
-            className="px-4 py-2 bg-green-600 text-white rounded"
-          >
-            Save
-          </button>
+          <input type="text" name="guardian_name" value={form.guardian_name || ""} onChange={handleChange} placeholder="Guardian Name" className="w-full border p-2" />
+          <select name="gender" value={form.gender || ""} onChange={handleChange} className="w-full border p-2">
+            <option value="">Gender</option>
+            <option>Male</option>
+            <option>Female</option>
+            <option>Non-binary</option>
+            <option>Prefer not to say</option>
+          </select>
+          <input type="date" name="dob" value={form.dob || ""} onChange={handleChange} className="w-full border p-2" />
+          <input type="text" name="location" value={form.location || ""} onChange={handleChange} placeholder="Location" className="w-full border p-2" />
+          <input type="text" name="subjects_interest" value={form.subjects_interest || ""} onChange={handleChange} placeholder="Subjects of Interest (comma-separated)" className="w-full border p-2" />
+          <input type="text" name="grade_level" value={form.grade_level || ""} onChange={handleChange} placeholder="Grade Level" className="w-full border p-2" />
+          <textarea name="goals" value={form.goals || ""} onChange={handleChange} placeholder="Learning Goals" className="w-full border p-2" />
+          <input type="text" name="preferred_languages" value={form.preferred_languages || ""} onChange={handleChange} placeholder="Preferred Languages (comma-separated)" className="w-full border p-2" />
+          <input type="text" name="time_slots" value={form.time_slots || ""} onChange={handleChange} placeholder="Time Slots (comma-separated)" className="w-full border p-2" />
+          <select name="learning_mode" value={form.learning_mode || ""} onChange={handleChange} className="w-full border p-2">
+            <option value="">Select Learning Mode</option>
+            <option value="online">Online</option>
+            <option value="offline">Offline</option>
+            <option value="hybrid">Hybrid</option>
+          </select>
+          <input type="text" name="payment_methods" value={form.payment_methods || ""} onChange={handleChange} placeholder="Payment Methods (comma-separated)" className="w-full border p-2" />
+          <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded">Save</button>
         </form>
       )}
     </div>
   );
 };
 
-export default Profile;
+export default StudentProfile;

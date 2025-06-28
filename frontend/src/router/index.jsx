@@ -6,11 +6,11 @@ import Register from "../pages/Register";
 import StudentDashboard from "../pages/StudentDashboard";
 import TeacherDashboard from "../pages/TeacherDashboard";
 import Profile from "../pages/Profile";
+import TeacherProfile from "../pages/TeacherProfile"; // ✅ NEW
 import BrowseTeachers from "../pages/BrowseTeachers";
 import BookSessionForm from "../pages/BookSessionForm";
 import MyBookings from "../pages/MyBookings";
-import TeacherAvailabilityForm from "../pages/TeacherAvailabilityForm"; // ✅ NEW IMPORT
-import TutorsList from "../components/TutorsList";
+import TeacherAvailabilityForm from "../pages/TeacherAvailabilityForm";
 
 const router = createBrowserRouter([
   {
@@ -21,18 +21,18 @@ const router = createBrowserRouter([
       { path: "login", element: <Login /> },
       { path: "register", element: <Register /> },
 
-      // Student routes
+      // ✅ Student routes
       { path: "student/dashboard", element: <StudentDashboard /> },
-      { path: "student/profile", element: <Profile /> },
+      { path: "student/profile", element: <Profile /> }, // Student-only
       { path: "student/teachers", element: <BrowseTeachers /> },
       { path: "book/:teacherId", element: <BookSessionForm /> },
       { path: "student/bookings", element: <MyBookings /> },
 
-      // Teacher routes
+      // ✅ Teacher routes
       { path: "teacher/dashboard", element: <TeacherDashboard /> },
-      { path: "teacher/profile", element: <Profile /> },
+      { path: "teacher/profile", element: <TeacherProfile /> }, // ✅ NEW teacher-only profile
       { path: "teacher/bookings", element: <MyBookings /> },
-      { path: "teacher/availability", element: <TeacherAvailabilityForm /> }, // ✅ NEW ROUTE
+      { path: "teacher/availability", element: <TeacherAvailabilityForm /> },
     ],
   },
 ]);

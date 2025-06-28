@@ -51,3 +51,4 @@ class TutoringSession(models.Model):
 
     def __str__(self):
         return f"{self.student.username} -> {self.teacher.username} | {self.date} ({self.status})"
+
