@@ -31,4 +31,7 @@ ipython>=8.0
 
 djangoframework-simplejwt<5.3.0
 
+# ImageField Support
+Pillow>=10.0
+
 
