@@ -160,5 +160,23 @@ class AllAvailabilityAPIView(generics.ListAPIView):
         return Availability.objects.filter(id__in=valid_ids).order_by("date", "start_time")
 
 
+# views.py
+from rest_framework.permissions import IsAuthenticated
+
+class TeacherSessionsAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = TutoringSessionSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+
+        # ✅ Debug check
+        print(f"[DEBUG] Auth user: {user}, role: {getattr(user, 'role', None)}")
+
+        if not user or not hasattr(user, 'role') or user.role != 'teacher':
+            raise PermissionDenied("Only teachers can view this.")
+
+        return TutoringSession.objects.filter(teacher=user).order_by('-date', '-created_at')
+
 
 

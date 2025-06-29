@@ -14,6 +14,7 @@ import TeacherAvailabilityForm from "../pages/TeacherAvailabilityForm";
 import TeacherSlotsDashboard from "../pages/TeacherSlotsDashboard.jsx";
 import StudentSlotBrowser from "../pages/StudentSlotBrowser.jsx";
 import AllTeachersSlotBrowser from "../pages/AllTeachersSlotBrowser.jsx";
+import TeacherSessions from "../pages/TeacherSessions";
 
 const router = createBrowserRouter([
   {
@@ -38,7 +39,10 @@ const router = createBrowserRouter([
       { path: "teacher/availability", element: <TeacherAvailabilityForm /> },
       { path: "teacher/slots", element: <TeacherSlotsDashboard /> }, // ✅ Slot Management
       { path: "/student/teacher/:teacherId/slots", element: <StudentSlotBrowser />},
-      { path: "/student/slots", element: <AllTeachersSlotBrowser /> }
+      { path: "/student/slots", element: <AllTeachersSlotBrowser /> },
+      { path: "/teacher/sessions", element: <TeacherSessions />},
+
+        
     ],
   },
 ]);

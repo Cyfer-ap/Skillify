@@ -43,6 +43,11 @@ const TeacherDashboard = () => {
           </Link>
         </li>
         <li>
+          <Link to="/teacher/sessions" className="text-blue-600 underline">
+            📅 View My Bookings
+          </Link>
+        </li>
+        <li>
           📅 Manage your tutoring schedule
           <TeacherSchedule />
         </li>
