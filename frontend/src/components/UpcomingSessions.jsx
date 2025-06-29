@@ -20,53 +20,21 @@ const sessions = [
 ];
 
 const UpcomingSessions = () => (
-  <div
-    style={{
-      border: "1px solid red",
-      padding: "10px",
-      borderRadius: "8px",
-      backgroundColor: "lightyellow",
-      margin: "10px",
-
-      display: "block",
-      overflowY: "auto", // Enable vertical scrolling
-      overflowX: "hidden",
-    }}
-  >
-    <h2 className="font-bold text-lg mb-2">Upcoming Sessions</h2>
-    <ul className="space-y-2">
+  <div className="upcoming-sessions-section">
+    <h2 className="upcoming-sessions-title">Upcoming Sessions</h2>
+    <ul className="upcoming-sessions-list">
       {sessions.map((session) => (
-        <li
-          key={session.id}
-          className="border rounded-lg p-4 bg-blue-50 flex flex-col md:flex-row md:items-center md:justify-between  "
-        >
-          <div
-            style={{
-              border: "1px solid red",
-              padding: "10px",
-              borderRadius: "8px",
-              backgroundColor: "lightyellow",
-              margin: "10px",
-              width: " 400px",
-              display: "inline-block",
-              overflowY: "auto", // Enable vertical scrolling
-              overflowX: "hidden",
-            }}
-          >
-            <div className="font-semibold">
-              {session.subject} with {session.tutor}
-            </div>
-            <div className="text-gray-600">
-              {session.date} at {session.time}
-            </div>
+        <li className="upcoming-session-card" key={session.id}>
+          <div className="upcoming-session-info">
+            <div className="upcoming-session-subject">{session.subject}</div>
+            <div className="upcoming-session-tutor">with {session.tutor}</div>
+            <div className="upcoming-session-date">{session.date} at {session.time}</div>
           </div>
-          <div>
+          <div className="upcoming-session-action">
             {session.status === "Available" ? (
-              <button className="mt-2 md:mt-0 bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
-                Book Now
-              </button>
+              <button className="upcoming-session-book-btn">Book Now</button>
             ) : (
-              <span className="text-green-600 font-semibold">Booked</span>
+              <span className="upcoming-session-booked">Booked</span>
             )}
           </div>
         </li>

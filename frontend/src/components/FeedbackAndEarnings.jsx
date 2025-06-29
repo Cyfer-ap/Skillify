@@ -1,4 +1,5 @@
 import React from "react";
+import "../pages/StudentDashboard.css";
 
 const FeedbackAndEarnings = () => {
   // Replace with actual data fetching and logic as needed
@@ -14,9 +15,7 @@ const FeedbackAndEarnings = () => {
         maxWidth: "800px",
       }}
     >
-      <h3 style={{ fontWeight: "bold", color: "#ca8a04" }}>
-        Student Feedback & Earnings
-      </h3>
+      <h3 className="tutor-feedback-title">Tutor Feedback</h3>
       <p style={{ color: "#92400e" }}>No feedback or earnings data yet.</p>
       {/* Add feedback list and earnings summary here */}
     </div>

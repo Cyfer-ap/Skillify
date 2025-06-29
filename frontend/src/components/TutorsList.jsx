@@ -28,33 +28,22 @@ const TutorsList = () => {
   );
 
   return (
-    <div className="mt-8">
-      <h2 className="bold">Available Tutors</h2>
+    <div className="tutors-section">
+      <h2>Available Tutors</h2>
       <input
         type="text"
         placeholder="Search by name or subject..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="mb-4 p-2 border rounded w-full max-w-xs"
+        className="tutor-search"
       />
-      <ul className="space-y-2">
+      <ul className="tutors-list-horizontal">
         {filteredTutors.map((tutor) => (
-          <li
-            key={tutor.id}
-            style={{
-              border: "1px solid red",
-              padding: "10px",
-              borderRadius: "8px",
-              backgroundColor: "lightyellow",
-              margin: "10px",
-              width: " 400px",
-              display: "inline-block",
-            }}
-          >
-            <img src={tutor.photo} alt={tutor.name} className="" />
-            <div className="bold">{tutor.name}</div>
-            <div>{tutor.subjects.join(", ")}</div>
-            <div>{tutor.bio}</div>
+          <li className="tutor-card" key={tutor.id}>
+            {/* <img src={tutor.photo} alt={tutor.name} /> */}
+            <div className="tutor-name">{tutor.name}</div>
+            <div className="tutor-subjects">{tutor.subjects.join(", ")}</div>
+            <div className="tutor-bio">{tutor.bio}</div>
           </li>
         ))}
       </ul>
