@@ -154,3 +154,17 @@ CORS_ALLOW_HEADERS = [
     "x-csrftoken",
     "x-requested-with",
 ]
+
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),       # ⏱️ Token valid for 30 mins
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),          # 🔁 Refresh token valid for 7 days
+    'ROTATE_REFRESH_TOKENS': True,                        # 🔁 Automatically issue new refresh token when used
+    'BLACKLIST_AFTER_ROTATION': True,                     # 🧯 Prevent replay attacks
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_USER_CLASS': 'accounts.CustomUser',
+    'SIGNING_KEY': SECRET_KEY,
+}

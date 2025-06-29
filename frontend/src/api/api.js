@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { refreshToken } from '../utils/authUtils'; // import refresh function
 
 // 🔐 AUTH & PROFILE API (accounts-related)
 const AccountsAPI = axios.create({
@@ -26,11 +27,32 @@ const BookingsAPI = axios.create({
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
-  }, (error) => {
-    return Promise.reject(error);
   });
-});
 
+  // 🔁 Auto-refresh expired tokens on 401
+  api.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+      const originalRequest = error.config;
+
+      if (error.response?.status === 401 && !originalRequest._retry) {
+        originalRequest._retry = true;
+        const newAccess = await refreshToken();
+
+        if (newAccess) {
+          originalRequest.headers.Authorization = `Bearer ${newAccess}`;
+          return api(originalRequest); // retry original request
+        }
+
+        // Clear invalid tokens if refresh fails
+        localStorage.removeItem('access');
+        localStorage.removeItem('refresh');
+      }
+
+      return Promise.reject(error);
+    }
+  );
+});
 
 // -----------------------------
 // ✅ Exported Auth Endpoints
@@ -49,5 +71,3 @@ export const updateSessionStatus = (id, status) => BookingsAPI.patch(`update/${i
 export const fetchMyAvailability = () => BookingsAPI.get('availability/my/');
 export const fetchAllAvailableSlots = () => BookingsAPI.get("availability/all/");
 export const fetchTeacherSessions = () => BookingsAPI.get('teacher-sessions/');
-
-
