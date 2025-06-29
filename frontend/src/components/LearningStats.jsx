@@ -1,10 +1,28 @@
 import React from "react";
 
-const stats = {
-  sessionsAttended: 8,
-  subjectsLearned: 3,
-  totalTutors: 2,
-};
+const stats = [
+  {
+    id: 1,
+    label: "Sessions Attended",
+    value: 8,
+    icon: "📅",
+    color: "#6366f1"
+  },
+  {
+    id: 2,
+    label: "Subjects Learned",
+    value: 3,
+    icon: "📚",
+    color: "#16a34a"
+  },
+  {
+    id: 3,
+    label: "Tutors Connected",
+    value: 2,
+    icon: "👩‍🏫",
+    color: "#2563eb"
+  },
+];
 
 const feedback = [
   {
@@ -21,91 +39,37 @@ const feedback = [
   },
 ];
 
+const avatarColors = ["#6366f1", "#16a34a", "#2563eb", "#f59e42", "#e11d48"];
+
 const LearningStats = () => (
-  <div
-    style={{
-      border: "1px solid red",
-      padding: "10px",
-      borderRadius: "8px",
-      backgroundColor: "lightyellow",
-      margin: "10px",
-      textAlign: "center",
-      overflowY: "auto", // Enable vertical scrolling
-      overflowX: "hidden",
-    }}
-  >
-    <h2 className="font-bold text-lg mb-2">Your Learning Stats</h2>
-    <div className="flex gap-8 mb-4">
-      <div
-        style={{
-          border: "10x",
-          display: "inline-block",
-          margin: "20px",
-          borderWidth: "10x",
-          padding: "20px",
-          backgroundColor: "lightblue",
-        }}
-      >
-        <div>{stats.sessionsAttended}</div>
-        <div className="text-gray-700">Sessions Attended</div>
-      </div>
-      <div
-        style={{
-          border: "1px",
-          display: "inline-block",
-          margin: "20px",
-          bordewidth: "10px",
-          padding: "20px",
-          backgroundColor: "lightgreen",
-        }}
-      >
-        <div className="text-2xl font-bold">{stats.subjectsLearned}</div>
-        <div className="text-gray-700">Subjects Learned</div>
-      </div>
-      <div
-        style={{
-          border: "1px",
-          display: "inline-block",
-          margin: "20px",
-          bordewidth: "10px",
-          padding: "20px",
-          backgroundColor: "lightcoral",
-        }}
-      >
-        <div className="text-2xl font-bold">{stats.totalTutors}</div>
-        <div className="text-gray-700">Tutors Connected</div>
-      </div>
+  <div className="learning-stats-section-pro">
+    <h2 className="learning-stats-title-pro">Your Learning Stats</h2>
+    <div className="learning-stats-cards-pro">
+      {stats.map((stat) => (
+        <div className="learning-stat-card-pro" key={stat.id}>
+          <div className="learning-stat-icon-pro" style={{ background: stat.color }}>{stat.icon}</div>
+          <div className="learning-stat-value-pro">{stat.value}</div>
+          <div className="learning-stat-label-pro">{stat.label}</div>
+        </div>
+      ))}
     </div>
-    <h3 className="font-semibold mb-2">Feedback from Tutors</h3>
-    <ul
-      style={{
-        border: "1px solid gray",
-        padding: "10px",
-        borderRadius: "8px",
-        backgroundColor: "lightblue",
-        margin: "10px",
-        listStyleType: "none",
-        color: "black",
-        overflowY: "auto", // Enable vertical scrolling
-      }}
-    >
-      {feedback.map((item) => (
-        <li
-          key={item.id}
-          style={{
-            border: "1px solid gray",
-            padding: "10px",
-            borderRadius: "8px",
-            backgroundColor: "lightyellow",
-            margin: "10px",
-            listStyleType: "none",
-            color: "black",
-            overflowY: "auto", // Enable vertical scrolling
-          }}
-        >
-          <div className="font-bold">{item.tutor}</div>
-          <div className="text-gray-600 text-sm">{item.date}</div>
-          <div>{item.comment}</div>
+    <h3 className="tutor-feedback-title">Tutor Feedback</h3>
+    <ul className="learning-feedback-list-pro">
+      {feedback.map((item, idx) => (
+        <li className="learning-feedback-card-pro feedback-bubble" key={item.id}>
+          <div className="feedback-header">
+            <span className="learning-feedback-avatar-pro" style={{ background: avatarColors[idx % avatarColors.length] }}>
+              {item.tutor.charAt(0)}
+            </span>
+            <div>
+              <div className="learning-feedback-tutor-pro">{item.tutor}</div>
+              <div className="learning-feedback-date-pro">{item.date}</div>
+            </div>
+          </div>
+          <div className="feedback-quote">
+            <span className="feedback-quote-icon">“</span>
+            <span>{item.comment}</span>
+          </div>
         </li>
       ))}
     </ul>

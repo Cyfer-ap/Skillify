@@ -1,11 +1,13 @@
-hrml, body {
+html, body {
   margin: 0;
   padding: 0;
   height: 100%;
   overflow: hidden;
+  background: linear-gradient(to bottom right, #ffffff, #dbeafe);
+
 }
 .login-container {
-  background: linear-gradient(to right, #007bff, #3399ff);
+  background: linear-gradient(to bottom right, #f0f9ff, #e0f2fe);
 }
 
 .login-box {
@@ -46,4 +48,22 @@ hrml, body {
   height: 100px;
   top: -30px;
   right: -30px;
+}
+
+.welcome-title {
+  font-size: 5rem !important;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 4px;
+  margin-bottom: 1.5rem;
+  z-index: 1;
+  position: relative;
+}
+
+.welcome-subtext {
+  font-size: 2.2rem !important;
+  color: #e0e7ff;
+  font-weight: 700;
+  z-index: 1;
+  position: relative;
 }

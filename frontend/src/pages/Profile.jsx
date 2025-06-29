@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import "./Profile.css";
 
 const Profile = () => {
   const [profile, setProfile] = useState(null);
@@ -66,227 +67,329 @@ const Profile = () => {
     }
   };
 
-  if (loading) return <p className="p-4">Loading profile...</p>;
+  if (loading) return <div className="loading-state">Loading profile...</div>;
 
   const isTeacher = profile?.rate !== undefined || form?.rate !== undefined;
 
   return (
-    <div
-      style={{
-        padding: "20px",
-        margin: "0 auto",
-        display: "block",
-      }}
-    >
-      <h2 className="text-2xl font-bold mb-4">My Profile</h2>
+    <div className="profile-container">
+      <div className="profile-header">
+        <h1 className="profile-title">My Profile</h1>
+        <p className="profile-subtitle">Manage your personal information and preferences</p>
+      </div>
 
       {!editMode && profile ? (
-        <>
-          <pre className="bg-gray-100 p-4 rounded whitespace-pre-wrap text-sm">
+        <div className="profile-display">
+          <pre className="profile-json">
             {JSON.stringify(profile, null, 2)}
           </pre>
           <button
             onClick={() => setEditMode(true)}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded"
+            className="edit-btn"
           >
             Edit Profile
           </button>
-        </>
+        </div>
       ) : (
-        <form
-          onSubmit={handleSubmit}
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "16px",
-            maxWidth: "600px",
-          }}
-        >
-          <h3 className="text-lg font-semibold">Basic Details</h3>
-          <input
-            type="text"
-            name="full_name"
-            value={form.full_name || ""}
-            onChange={handleChange}
-            placeholder="Full Name"
-            className="input"
-          />
-          <input type="file" name="profile_picture" onChange={handleChange} />
-          <input
-            type="text"
-            name="gender"
-            value={form.gender || ""}
-            onChange={handleChange}
-            placeholder="Gender"
-            className="input"
-          />
-          <input
-            type="date"
-            name="dob"
-            value={form.dob || ""}
-            onChange={handleChange}
-            className="input"
-          />
-          <input
-            type="text"
-            name="location"
-            value={form.location || ""}
-            onChange={handleChange}
-            placeholder="Location"
-            className="input"
-          />
+        <form onSubmit={handleSubmit} className="profile-form">
+          <h3 className="section-title">Basic Details</h3>
+          
+          <div className="form-grid">
+            <div className="input-group">
+              <label className="input-label">Full Name</label>
+              <input
+                type="text"
+                name="full_name"
+                value={form.full_name || ""}
+                onChange={handleChange}
+                placeholder="Enter your full name"
+                className="form-input"
+              />
+            </div>
+            
+            <div className="input-group">
+              <label className="input-label">Gender</label>
+              <input
+                type="text"
+                name="gender"
+                value={form.gender || ""}
+                onChange={handleChange}
+                placeholder="Enter your gender"
+                className="form-input"
+              />
+            </div>
+          </div>
+
+          <div className="form-grid">
+            <div className="input-group">
+              <label className="input-label">Date of Birth</label>
+              <input
+                type="date"
+                name="dob"
+                value={form.dob || ""}
+                onChange={handleChange}
+                className="form-input"
+              />
+            </div>
+            
+            <div className="input-group">
+              <label className="input-label">Location</label>
+              <input
+                type="text"
+                name="location"
+                value={form.location || ""}
+                onChange={handleChange}
+                placeholder="Enter your location"
+                className="form-input"
+              />
+            </div>
+          </div>
+
+          <div className="input-group">
+            <label className="input-label">Profile Picture</label>
+            <div className="file-input-container">
+              <input
+                type="file"
+                name="profile_picture"
+                onChange={handleChange}
+                className="file-input"
+                accept="image/*"
+              />
+              <label className="file-input-label">
+                <svg fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                </svg>
+                Choose Profile Picture
+              </label>
+            </div>
+          </div>
+
           {isTeacher ? (
             <>
-              <h3 className="text-lg font-semibold">Professional Info</h3>
-              <input
-                type="text"
-                name="subjects"
-                value={form.subjects || ""}
-                onChange={handleChange}
-                placeholder="Subjects (comma-separated)"
-                className="input"
-              />
-              <input
-                type="text"
-                name="grade_levels"
-                value={form.grade_levels || ""}
-                onChange={handleChange}
-                placeholder="Grade Levels"
-                className="input"
-              />
-              <input
-                type="text"
-                name="languages"
-                value={form.languages || ""}
-                onChange={handleChange}
-                placeholder="Languages"
-                className="input"
-              />
-              <textarea
-                name="experience"
-                value={form.experience || ""}
-                onChange={handleChange}
-                placeholder="Experience"
-                className="input"
-              />
-              <textarea
-                name="certifications"
-                value={form.certifications || ""}
-                onChange={handleChange}
-                placeholder="Certifications"
-                className="input"
-              />
-              <input
-                type="text"
-                name="availability"
-                value={form.availability || ""}
-                onChange={handleChange}
-                placeholder="Availability Schedule"
-                className="input"
-              />
-              <input
-                type="number"
-                name="rate"
-                value={form.rate || ""}
-                onChange={handleChange}
-                placeholder="Hourly Rate"
-                className="input"
-              />
-              <select
-                name="mode"
-                value={form.mode || ""}
-                onChange={handleChange}
-                className="input"
-              >
-                <option value="">Select Mode</option>
-                <option value="online">Online</option>
-                <option value="offline">In-person</option>
-                <option value="hybrid">Hybrid</option>
-              </select>
-              <textarea
-                name="bio"
-                value={form.bio || ""}
-                onChange={handleChange}
-                placeholder="Bio"
-                className="input"
-              />
+              <h3 className="section-title">Professional Information</h3>
+              
+              <div className="form-grid">
+                <div className="input-group">
+                  <label className="input-label">Subjects</label>
+                  <input
+                    type="text"
+                    name="subjects"
+                    value={form.subjects || ""}
+                    onChange={handleChange}
+                    placeholder="e.g., Math, Science, English"
+                    className="form-input"
+                  />
+                </div>
+                
+                <div className="input-group">
+                  <label className="input-label">Grade Levels</label>
+                  <input
+                    type="text"
+                    name="grade_levels"
+                    value={form.grade_levels || ""}
+                    onChange={handleChange}
+                    placeholder="e.g., K-12, College"
+                    className="form-input"
+                  />
+                </div>
+              </div>
+
+              <div className="form-grid">
+                <div className="input-group">
+                  <label className="input-label">Languages</label>
+                  <input
+                    type="text"
+                    name="languages"
+                    value={form.languages || ""}
+                    onChange={handleChange}
+                    placeholder="e.g., English, Spanish"
+                    className="form-input"
+                  />
+                </div>
+                
+                <div className="input-group">
+                  <label className="input-label">Hourly Rate ($)</label>
+                  <input
+                    type="number"
+                    name="rate"
+                    value={form.rate || ""}
+                    onChange={handleChange}
+                    placeholder="Enter your hourly rate"
+                    className="form-input"
+                  />
+                </div>
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">Teaching Mode</label>
+                <select
+                  name="mode"
+                  value={form.mode || ""}
+                  onChange={handleChange}
+                  className="form-select"
+                >
+                  <option value="">Select Teaching Mode</option>
+                  <option value="online">Online</option>
+                  <option value="offline">In-person</option>
+                  <option value="hybrid">Hybrid</option>
+                </select>
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">Availability Schedule</label>
+                <input
+                  type="text"
+                  name="availability"
+                  value={form.availability || ""}
+                  onChange={handleChange}
+                  placeholder="e.g., Mon-Fri 9AM-5PM"
+                  className="form-input"
+                />
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">Experience</label>
+                <textarea
+                  name="experience"
+                  value={form.experience || ""}
+                  onChange={handleChange}
+                  placeholder="Describe your teaching experience..."
+                  className="form-textarea"
+                />
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">Certifications</label>
+                <textarea
+                  name="certifications"
+                  value={form.certifications || ""}
+                  onChange={handleChange}
+                  placeholder="List your certifications and qualifications..."
+                  className="form-textarea"
+                />
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">Bio</label>
+                <textarea
+                  name="bio"
+                  value={form.bio || ""}
+                  onChange={handleChange}
+                  placeholder="Tell students about yourself..."
+                  className="form-textarea"
+                />
+              </div>
             </>
           ) : (
             <>
-              <h3 className="text-lg font-semibold">Learning Preferences</h3>
-              <input
-                type="text"
-                name="guardian_name"
-                value={form.guardian_name || ""}
-                onChange={handleChange}
-                placeholder="Guardian Name"
-                className="input"
-              />
-              <input
-                type="text"
-                name="subjects_interest"
-                value={form.subjects_interest || ""}
-                onChange={handleChange}
-                placeholder="Subjects of Interest"
-                className="input"
-              />
-              <input
-                type="text"
-                name="grade_level"
-                value={form.grade_level || ""}
-                onChange={handleChange}
-                placeholder="Grade Level"
-                className="input"
-              />
-              <textarea
-                name="goals"
-                value={form.goals || ""}
-                onChange={handleChange}
-                placeholder="Learning Goals"
-                className="input"
-              />
-              <input
-                type="text"
-                name="preferred_languages"
-                value={form.preferred_languages || ""}
-                onChange={handleChange}
-                placeholder="Preferred Languages"
-                className="input"
-              />
-              <input
-                type="text"
-                name="time_slots"
-                value={form.time_slots || ""}
-                onChange={handleChange}
-                placeholder="Preferred Time Slots"
-                className="input"
-              />
-              <select
-                name="learning_mode"
-                value={form.learning_mode || ""}
-                onChange={handleChange}
-                className="input"
-              >
-                <option value="">Select Mode</option>
-                <option value="online">Online</option>
-                <option value="offline">In-person</option>
-                <option value="hybrid">Hybrid</option>
-              </select>
-              <input
-                type="text"
-                name="payment_methods"
-                value={form.payment_methods || ""}
-                onChange={handleChange}
-                placeholder="Payment Methods"
-                className="input"
-              />
+              <h3 className="section-title">Learning Preferences</h3>
+              
+              <div className="form-grid">
+                <div className="input-group">
+                  <label className="input-label">Guardian Name</label>
+                  <input
+                    type="text"
+                    name="guardian_name"
+                    value={form.guardian_name || ""}
+                    onChange={handleChange}
+                    placeholder="Enter guardian's name"
+                    className="form-input"
+                  />
+                </div>
+                
+                <div className="input-group">
+                  <label className="input-label">Grade Level</label>
+                  <input
+                    type="text"
+                    name="grade_level"
+                    value={form.grade_level || ""}
+                    onChange={handleChange}
+                    placeholder="e.g., 10th Grade"
+                    className="form-input"
+                  />
+                </div>
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">Subjects of Interest</label>
+                <input
+                  type="text"
+                  name="subjects_interest"
+                  value={form.subjects_interest || ""}
+                  onChange={handleChange}
+                  placeholder="e.g., Math, Physics, Literature"
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-grid">
+                <div className="input-group">
+                  <label className="input-label">Preferred Languages</label>
+                  <input
+                    type="text"
+                    name="preferred_languages"
+                    value={form.preferred_languages || ""}
+                    onChange={handleChange}
+                    placeholder="e.g., English, Spanish"
+                    className="form-input"
+                  />
+                </div>
+                
+                <div className="input-group">
+                  <label className="input-label">Learning Mode</label>
+                  <select
+                    name="learning_mode"
+                    value={form.learning_mode || ""}
+                    onChange={handleChange}
+                    className="form-select"
+                  >
+                    <option value="">Select Learning Mode</option>
+                    <option value="online">Online</option>
+                    <option value="offline">In-person</option>
+                    <option value="hybrid">Hybrid</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">Preferred Time Slots</label>
+                <input
+                  type="text"
+                  name="time_slots"
+                  value={form.time_slots || ""}
+                  onChange={handleChange}
+                  placeholder="e.g., Weekdays 4-6 PM"
+                  className="form-input"
+                />
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">Payment Methods</label>
+                <input
+                  type="text"
+                  name="payment_methods"
+                  value={form.payment_methods || ""}
+                  onChange={handleChange}
+                  placeholder="e.g., Credit Card, PayPal"
+                  className="form-input"
+                />
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">Learning Goals</label>
+                <textarea
+                  name="goals"
+                  value={form.goals || ""}
+                  onChange={handleChange}
+                  placeholder="Describe your learning goals and objectives..."
+                  className="form-textarea"
+                />
+              </div>
             </>
           )}
-          <button
-            type="submit"
-            className="px-4 py-2 bg-green-600 text-white rounded"
-          >
-            Save
+          
+          <button type="submit" className="save-btn">
+            Save Profile
           </button>
         </form>
       )}
