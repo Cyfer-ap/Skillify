@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
@@ -27,7 +28,12 @@ class TeacherAvailabilityAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         teacher_id = self.kwargs['teacher_id']
-        return Availability.objects.filter(teacher__id=teacher_id)
+        today = timezone.now().date()
+        return Availability.objects.filter(
+            teacher__id=teacher_id,
+            date__gte=today
+        ).order_by('date', 'start_time')
+
 
 
 # ✅ Use BookSessionSerializer (not full session one)
@@ -80,3 +86,32 @@ class CreateAvailabilityAPIView(generics.CreateAPIView):
         if self.request.user.role != 'teacher':
             raise PermissionDenied("Only teachers can add availability.")
         serializer.save(teacher=self.request.user)
+
+class MyAvailabilityAPIView(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = AvailabilitySerializer
+
+    def get_queryset(self):
+        return Availability.objects.filter(teacher=self.request.user)
+
+
+class BookingSerializer:
+    pass
+
+
+class MultiBookAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        bookings = request.data
+        created = []
+
+        for item in bookings:
+            serializer = BookingSerializer(data=item)
+            if serializer.is_valid():
+                serializer.save(student=request.user)
+                created.append(serializer.data)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"created": created}, status=status.HTTP_201_CREATED)

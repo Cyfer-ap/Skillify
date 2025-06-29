@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 
 const TeacherAvailabilityForm = () => {
@@ -7,14 +7,13 @@ const TeacherAvailabilityForm = () => {
     start_time: "",
     end_time: "",
     platform: "",
-    subject: "",
+    subject_ids: [],
     session_type: "1v1",
     max_students: "",
     repeat_option: "",
     notes: "",
     language: "",
     grade_level: "",
-    instant_booking: true,
     rate_type: "per_booking",
     rate: "",
     cancellation_policy: "",
@@ -24,8 +23,18 @@ const TeacherAvailabilityForm = () => {
     prerequisites: ""
   });
 
+  const [subjects, setSubjects] = useState([]);
   const [message, setMessage] = useState("");
   const token = localStorage.getItem("access");
+
+  useEffect(() => {
+    axios
+      .get("http://127.0.0.1:8000/api/bookings/subjects/", {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      .then((res) => setSubjects(res.data))
+      .catch((err) => console.error("❌ Failed to load subjects", err));
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -33,14 +42,20 @@ const TeacherAvailabilityForm = () => {
     setForm({ ...form, [name]: val });
   };
 
+  const handleSubjectSelect = (e) => {
+    const selectedOptions = Array.from(e.target.selectedOptions).map((opt) => opt.value);
+    setForm({ ...form, subject_ids: selectedOptions });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     const payload = {
       ...form,
       start_time: form.start_time.length === 5 ? form.start_time + ":00" : form.start_time,
       end_time: form.end_time.length === 5 ? form.end_time + ":00" : form.end_time,
       max_students: form.session_type === "group" ? parseInt(form.max_students || 0) : null,
-      tags: form.tags ? form.tags.split(",").map(t => t.trim()) : []
+      tags: form.tags ? form.tags.split(",").map(t => t.trim()) : [],
     };
 
     try {
@@ -82,8 +97,18 @@ const TeacherAvailabilityForm = () => {
             <option>MS Teams</option>
           </select>
 
-          <label>Subject:</label>
-          <input type="text" name="subject" value={form.subject} onChange={handleChange} className="border p-2" placeholder="e.g., Algebra" />
+          <label>Subjects (multi-select):</label>
+          <select
+            name="subject_ids"
+            multiple
+            value={form.subject_ids}
+            onChange={handleSubjectSelect}
+            className="border p-2"
+          >
+            {subjects.map((subj) => (
+              <option key={subj.id} value={subj.id}>{subj.name}</option>
+            ))}
+          </select>
 
           <label>Session Type:</label>
           <select name="session_type" value={form.session_type} onChange={handleChange} className="border p-2">
@@ -105,10 +130,14 @@ const TeacherAvailabilityForm = () => {
           <input type="text" name="language" value={form.language} onChange={handleChange} className="border p-2" placeholder="e.g., English" />
 
           <label>Grade Level:</label>
-          <input type="text" name="grade_level" value={form.grade_level} onChange={handleChange} className="border p-2" placeholder="e.g., Grade 10" />
-
-          <label>Instant Booking:</label>
-          <input type="checkbox" name="instant_booking" checked={form.instant_booking} onChange={handleChange} />
+          <select name="grade_level" value={form.grade_level} onChange={handleChange} className="border p-2">
+            <option value="">-- Optional --</option>
+            <option value="1-5">Grade 1–5</option>
+            <option value="6-10">Grade 6–10</option>
+            <option value="11-12">Grade 11–12</option>
+            <option value="UG">Undergraduate</option>
+            <option value="PG">Postgraduate</option>
+          </select>
 
           <label>Rate Type:</label>
           <select name="rate_type" value={form.rate_type} onChange={handleChange} className="border p-2">

@@ -11,6 +11,9 @@ import BrowseTeachers from "../pages/BrowseTeachers";
 import BookSessionForm from "../pages/BookSessionForm";
 import MyBookings from "../pages/MyBookings";
 import TeacherAvailabilityForm from "../pages/TeacherAvailabilityForm";
+import TeacherSlotsDashboard from "../pages/TeacherSlotsDashboard.jsx";
+import StudentSlotBrowser from "../pages/StudentSlotBrowser.jsx";
+import AllTeachersSlotBrowser from "../pages/AllTeachersSlotBrowser.jsx";
 
 const router = createBrowserRouter([
   {
@@ -33,6 +36,9 @@ const router = createBrowserRouter([
       { path: "teacher/profile", element: <TeacherProfile /> }, // ✅ NEW teacher-only profile
       { path: "teacher/bookings", element: <MyBookings /> },
       { path: "teacher/availability", element: <TeacherAvailabilityForm /> },
+      { path: "teacher/slots", element: <TeacherSlotsDashboard /> }, // ✅ Slot Management
+      { path: "/student/teacher/:teacherId/slots", element: <StudentSlotBrowser />},
+      { path: "/student/slots", element: <AllTeachersSlotBrowser /> }
     ],
   },
 ]);
