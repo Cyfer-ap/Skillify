@@ -1,4 +1,3 @@
-// src/pages/TeacherSessions.jsx
 import { useEffect, useState } from "react";
 import { fetchTeacherSessions, updateSessionStatus } from "../api/api";
 
@@ -23,6 +22,22 @@ const TeacherSessions = () => {
     }
   };
 
+  const handleCancel = async (id) => {
+    const confirm = window.confirm("Are you sure you want to cancel this session?");
+    if (!confirm) return;
+
+    try {
+      await updateSessionStatus(id, "cancelled");
+      alert("❌ Session cancelled");
+      setSessions(prev =>
+        prev.map(s => (s.id === id ? { ...s, status: "cancelled" } : s))
+      );
+    } catch (err) {
+      console.error("Failed to cancel session:", err);
+      alert("❌ Could not cancel session");
+    }
+  };
+
   return (
     <div className="p-6 bg-blue-50 min-h-screen">
       <h2 className="text-2xl font-bold mb-4">📚 My Tutoring Sessions</h2>
@@ -37,12 +52,30 @@ const TeacherSessions = () => {
               <p><strong>Time:</strong> {s.start_time} - {s.end_time}</p>
               <p><strong>Topic:</strong> {s.topic || "N/A"}</p>
               <p><strong>Status:</strong> <span className="capitalize">{s.status}</span></p>
+
               {s.status === "pending" && (
+                <div className="flex space-x-4 mt-2">
+                  <button
+                    onClick={() => handleConfirm(s.id)}
+                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                  >
+                    ✅ Confirm
+                  </button>
+                  <button
+                    onClick={() => handleCancel(s.id)}
+                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                  >
+                    ❌ Cancel
+                  </button>
+                </div>
+              )}
+
+              {s.status === "confirmed" && (
                 <button
-                  onClick={() => handleConfirm(s.id)}
-                  className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                  onClick={() => handleCancel(s.id)}
+                  className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
                 >
-                  ✅ Confirm
+                  ❌ Cancel
                 </button>
               )}
             </li>

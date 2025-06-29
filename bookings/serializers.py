@@ -37,8 +37,6 @@ class AvailabilitySerializer(serializers.ModelSerializer):
         return availability
 
 
-
-
 # ✅ Serializer for GET responses
 class TutoringSessionSerializer(serializers.ModelSerializer):
     student_name = serializers.CharField(source='student.username', read_only=True)
@@ -48,7 +46,8 @@ class TutoringSessionSerializer(serializers.ModelSerializer):
         model = TutoringSession
         fields = [
             'id', 'student', 'student_name', 'teacher', 'teacher_name',
-            'date', 'start_time', 'end_time', 'topic', 'status', 'created_at'
+            'date', 'start_time', 'end_time', 'topic', 'status', 'created_at',
+            'cancelled_by',
         ]
 
 

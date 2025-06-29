@@ -66,18 +66,50 @@ class UpdateBookingStatusAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request, session_id):
+        user = request.user
         try:
             session = TutoringSession.objects.get(id=session_id)
-            if session.teacher != request.user:
-                return Response({"detail": "Permission denied"}, status=403)
-            new_status = request.data.get('status')
+            new_status = request.data.get("status")
+
             if new_status not in dict(TutoringSession.STATUS_CHOICES):
                 return Response({"detail": "Invalid status"}, status=400)
-            session.status = new_status
-            session.save()
-            return Response({"message": "Session updated successfully"})
+
+            if user.role == "teacher":
+                if session.teacher != user:
+                    return Response({"detail": "Permission denied"}, status=403)
+
+                if new_status == "confirmed":
+                    session.status = "confirmed"
+                    session.save()
+                    return Response({"message": "Session confirmed"})
+
+                elif new_status == "cancelled":
+                    if session.status in ["completed", "cancelled"]:
+                        return Response({"detail": "Cannot cancel this session"}, status=403)
+                    session.status = "cancelled"
+                    session.cancelled_by = "teacher"
+                    session.save()
+                    return Response({"message": "Session cancelled"})
+
+                return Response({"detail": "Invalid teacher action"}, status=403)
+
+            elif user.role == "student":
+                if session.student != user:
+                    return Response({"detail": "Permission denied"}, status=403)
+                if new_status != "cancelled":
+                    return Response({"detail": "Students can only cancel"}, status=403)
+                if session.status in ["completed", "cancelled"]:
+                    return Response({"detail": "Cannot cancel this session"}, status=403)
+                session.status = "cancelled"
+                session.cancelled_by = "student"
+                session.save()
+                return Response({"message": "Session cancelled"})
+
+            return Response({"detail": "Invalid role"}, status=400)
+
         except TutoringSession.DoesNotExist:
             return Response({"detail": "Session not found"}, status=404)
+
 
 
 class CreateAvailabilityAPIView(generics.CreateAPIView):
@@ -88,6 +120,7 @@ class CreateAvailabilityAPIView(generics.CreateAPIView):
         if self.request.user.role != 'teacher':
             raise PermissionDenied("Only teachers can add availability.")
         serializer.save(teacher=self.request.user)
+
 
 class MyAvailabilityAPIView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -159,9 +192,6 @@ class AllAvailabilityAPIView(generics.ListAPIView):
 
         return Availability.objects.filter(id__in=valid_ids).order_by("date", "start_time")
 
-
-# views.py
-from rest_framework.permissions import IsAuthenticated
 
 class TeacherSessionsAPIView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]

@@ -71,3 +71,4 @@ export const updateSessionStatus = (id, status) => BookingsAPI.patch(`update/${i
 export const fetchMyAvailability = () => BookingsAPI.get('availability/my/');
 export const fetchAllAvailableSlots = () => BookingsAPI.get("availability/all/");
 export const fetchTeacherSessions = () => BookingsAPI.get('teacher-sessions/');
+
