@@ -29,5 +29,6 @@ whitenoise>=6.6.0
 # Optional (Dev utilities)
 ipython>=8.0
 
-djangoframework-simplejwt
+djangoframework-simplejwt<5.3.0
+
 
