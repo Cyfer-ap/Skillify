@@ -1,6 +1,14 @@
 from rest_framework import serializers
-from .models import Availability, TutoringSession
 from accounts.models import CustomUser
+from .models import Availability, TutoringSession, Subject
+
+
+class SubjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subject
+        fields = ['id', 'name']
+
+
 
 class TeacherSerializer(serializers.ModelSerializer):
     class Meta:
@@ -9,6 +17,9 @@ class TeacherSerializer(serializers.ModelSerializer):
 
 
 class AvailabilitySerializer(serializers.ModelSerializer):
+    subjects = SubjectSerializer(many=True, read_only=True)
+    subject_ids = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), many=True, write_only=True)
+
     class Meta:
         model = Availability
         fields = '__all__'
@@ -18,6 +29,12 @@ class AvailabilitySerializer(serializers.ModelSerializer):
         if data['start_time'] >= data['end_time']:
             raise serializers.ValidationError("End time must be after start time.")
         return data
+
+    def create(self, validated_data):
+        subject_ids = validated_data.pop('subject_ids', [])
+        availability = Availability.objects.create(**validated_data)
+        availability.subjects.set(subject_ids)
+        return availability
 
 
 
