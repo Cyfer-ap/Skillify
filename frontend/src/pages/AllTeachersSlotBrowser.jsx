@@ -39,7 +39,6 @@ const StudentSlotBrowser = () => {
           allSlots.push(...availRes.data);
         }
 
-        // Remove duplicates if any
         const uniqueMap = {};
         allSlots.forEach(s => {
           const key = `${s.teacher}_${s.date}_${s.start_time}_${s.end_time}`;
@@ -57,6 +56,16 @@ const StudentSlotBrowser = () => {
   }, []);
 
   const toggleBlock = (slotId, block) => {
+    const slot = slots.find(s => s.id === slotId);
+    const teacherId = slot.teacher;
+
+    if (selectedBlocks.length > 0) {
+      const currentTeacher = slots.find(s => s.id === selectedBlocks[0].slotId)?.teacher;
+      if (teacherId !== currentTeacher) {
+        return alert("❌ You can only book slots from one teacher at a time.");
+      }
+    }
+
     const key = `${slotId}_${block.start}`;
     const exists = selectedBlocks.find(b => b.key === key);
 
@@ -78,12 +87,23 @@ const StudentSlotBrowser = () => {
   const isBlockSelected = (slotId, start) =>
     selectedBlocks.some(b => b.slotId === slotId && b.start === start);
 
+  const isContinuous = (blocks) => {
+    const sorted = [...blocks].sort((a, b) =>
+      dayjs(`2000-01-01T${a.start}`).isBefore(dayjs(`2000-01-01T${b.start}`)) ? -1 : 1
+    );
+    for (let i = 1; i < sorted.length; i++) {
+      if (sorted[i - 1].end !== sorted[i].start) return false;
+    }
+    return true;
+  };
+
   const handleBook = async () => {
     if (selectedBlocks.length === 0) return alert("Please select at least one slot.");
+    if (!isContinuous(selectedBlocks)) return alert("❌ Please select continuous time slots only.");
+
     const sorted = [...selectedBlocks].sort((a, b) =>
       dayjs(`2000-01-01T${a.start}`).isBefore(dayjs(`2000-01-01T${b.start}`)) ? -1 : 1
     );
-
     const first = sorted[0];
     const last = sorted[sorted.length - 1];
     const refSlot = slots.find(s => s.id === first.slotId);
@@ -112,6 +132,9 @@ const StudentSlotBrowser = () => {
     if (!grouped[key]) grouped[key] = [];
     grouped[key].push(s);
   });
+
+  const selectedSlot = selectedBlocks.length ? slots.find(s => s.id === selectedBlocks[0].slotId) : null;
+  const selectedTeacher = selectedSlot ? teachers[selectedSlot.teacher] : null;
 
   return (
     <div className="p-4 bg-blue-100 min-h-screen">
@@ -152,7 +175,7 @@ const StudentSlotBrowser = () => {
         );
       })}
 
-      <div className="mt-6">
+      <div className="mt-6 bg-white p-4 rounded shadow">
         <label className="block font-semibold mb-1">Topic (optional):</label>
         <input
           type="text"
@@ -161,6 +184,17 @@ const StudentSlotBrowser = () => {
           className="border p-2 rounded w-full mb-4"
           placeholder="Algebra, ReactJS, etc."
         />
+
+        {selectedBlocks.length > 0 && selectedTeacher && (
+          <div className="text-sm mb-4 bg-blue-50 p-3 rounded">
+            <p><strong>Teacher:</strong> {selectedTeacher.username}</p>
+            <p><strong>Date:</strong> {selectedSlot.date}</p>
+            <p><strong>Start:</strong> {selectedBlocks[0].start}</p>
+            <p><strong>End:</strong> {selectedBlocks[selectedBlocks.length - 1].end}</p>
+            <p><strong>Rate:</strong> ₹{selectedSlot.rate} ({selectedSlot.rate_type})</p>
+          </div>
+        )}
+
         <button
           onClick={handleBook}
           className="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700"
