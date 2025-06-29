@@ -29,7 +29,7 @@ const TeacherDashboard = () => {
           </Link>
         </li>
         <li>
-          <Link to="/teacher/slots" className="block bg-indigo-600 text-white px-4 py-2 rounded text-center">
+          <Link to="/teacher/slots" className="text-blue-600 underline">
           📅 View My Slots
         </Link>
         </li>
