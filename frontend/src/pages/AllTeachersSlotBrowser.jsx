@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import { fetchAvailability, bookSession, fetchTeachers } from "../api/api";
+import {
+  fetchAllAvailableSlots,
+  bookSession,
+  fetchTeachers,
+  fetchMyBookings,
+} from "../api/api";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 
@@ -7,8 +12,10 @@ const generateTimeBlocks = (start, end, interval = 30) => {
   const result = [];
   let current = dayjs(`2000-01-01T${start}`);
   const endTime = dayjs(`2000-01-01T${end}`);
-
-  while (current.add(interval, "minute").isBefore(endTime) || current.add(interval, "minute").isSame(endTime)) {
+  while (
+    current.add(interval, "minute").isBefore(endTime) ||
+    current.add(interval, "minute").isSame(endTime)
+  ) {
     const next = current.add(interval, "minute");
     result.push({
       start: current.format("HH:mm"),
@@ -21,58 +28,59 @@ const generateTimeBlocks = (start, end, interval = 30) => {
 
 const StudentSlotBrowser = () => {
   const [slots, setSlots] = useState([]);
-  const [selectedBlocks, setSelectedBlocks] = useState([]);
   const [teachers, setTeachers] = useState({});
   const [topic, setTopic] = useState("");
+  const [selectedBlocks, setSelectedBlocks] = useState([]);
+  const [allBookings, setAllBookings] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
     const loadAllData = async () => {
       try {
-        const res = await fetchTeachers();
-        const teacherMap = {};
-        const allSlots = [];
+        const [teachersRes, availabilityRes, bookingsRes] = await Promise.all([
+          fetchTeachers(),
+          fetchAllAvailableSlots(),
+          fetchMyBookings(),
+        ]);
 
-        for (const t of res.data) {
+        const teacherMap = {};
+        teachersRes.data.forEach((t) => {
           teacherMap[t.id] = t;
-          const availRes = await fetchAvailability(t.id);
-          allSlots.push(...availRes.data);
-        }
+        });
 
         const uniqueMap = {};
-        allSlots.forEach(s => {
+        availabilityRes.data.forEach((s) => {
           const key = `${s.teacher}_${s.date}_${s.start_time}_${s.end_time}`;
           uniqueMap[key] = s;
         });
 
         setTeachers(teacherMap);
         setSlots(Object.values(uniqueMap));
+        setAllBookings(bookingsRes.data);
       } catch (err) {
-        console.error("Error loading data:", err);
+        console.error("Loading error:", err);
       }
     };
-
     loadAllData();
   }, []);
 
   const toggleBlock = (slotId, block) => {
-    const slot = slots.find(s => s.id === slotId);
+    const slot = slots.find((s) => s.id === slotId);
     const teacherId = slot.teacher;
 
     if (selectedBlocks.length > 0) {
-      const currentTeacher = slots.find(s => s.id === selectedBlocks[0].slotId)?.teacher;
+      const currentTeacher = slots.find((s) => s.id === selectedBlocks[0].slotId)?.teacher;
       if (teacherId !== currentTeacher) {
-        return alert("❌ You can only book slots from one teacher at a time.");
+        return alert("❌ Book from only one teacher at a time.");
       }
     }
 
     const key = `${slotId}_${block.start}`;
-    const exists = selectedBlocks.find(b => b.key === key);
-
+    const exists = selectedBlocks.find((b) => b.key === key);
     if (exists) {
-      setSelectedBlocks(prev => prev.filter(b => b.key !== key));
+      setSelectedBlocks((prev) => prev.filter((b) => b.key !== key));
     } else {
-      setSelectedBlocks(prev => [
+      setSelectedBlocks((prev) => [
         ...prev,
         {
           key,
@@ -85,7 +93,23 @@ const StudentSlotBrowser = () => {
   };
 
   const isBlockSelected = (slotId, start) =>
-    selectedBlocks.some(b => b.slotId === slotId && b.start === start);
+    selectedBlocks.some((b) => b.slotId === slotId && b.start === start);
+
+  const getBlockStatus = (date, startTime, endTime) => {
+    const match = allBookings.find(
+      (b) =>
+        b.date === date &&
+        dayjs(`2000-01-01T${b.start_time}`).isBefore(dayjs(`2000-01-01T${endTime}`)) &&
+        dayjs(`2000-01-01T${b.end_time}`).isAfter(dayjs(`2000-01-01T${startTime}`))
+    );
+
+    if (match) {
+      if (match.status === "pending") return "bg-purple-400 text-white";
+      if (match.status === "confirmed") return "bg-green-500 text-white";
+      return "bg-red-400 text-white";
+    }
+    return "bg-gray-100";
+  };
 
   const isContinuous = (blocks) => {
     const sorted = [...blocks].sort((a, b) =>
@@ -98,15 +122,16 @@ const StudentSlotBrowser = () => {
   };
 
   const handleBook = async () => {
-    if (selectedBlocks.length === 0) return alert("Please select at least one slot.");
-    if (!isContinuous(selectedBlocks)) return alert("❌ Please select continuous time slots only.");
+    if (selectedBlocks.length === 0) return alert("Select at least one slot.");
+    if (!isContinuous(selectedBlocks)) return alert("Slots must be continuous.");
 
     const sorted = [...selectedBlocks].sort((a, b) =>
       dayjs(`2000-01-01T${a.start}`).isBefore(dayjs(`2000-01-01T${b.start}`)) ? -1 : 1
     );
     const first = sorted[0];
     const last = sorted[sorted.length - 1];
-    const refSlot = slots.find(s => s.id === first.slotId);
+    const refSlot = slots.find((s) => s.id === first.slotId);
+
     const payload = {
       teacher: refSlot.teacher,
       date: refSlot.date,
@@ -117,23 +142,23 @@ const StudentSlotBrowser = () => {
 
     try {
       await bookSession(payload);
-      alert("✅ Session booked successfully!");
+      alert("✅ Session booked!");
       setSelectedBlocks([]);
       navigate("/student/bookings");
     } catch (err) {
       console.error(err);
-      alert("❌ Booking failed. Try again.");
+      alert("❌ Booking failed.");
     }
   };
 
   const grouped = {};
-  slots.forEach(s => {
+  slots.forEach((s) => {
     const key = `${s.teacher}_${s.date}`;
     if (!grouped[key]) grouped[key] = [];
     grouped[key].push(s);
   });
 
-  const selectedSlot = selectedBlocks.length ? slots.find(s => s.id === selectedBlocks[0].slotId) : null;
+  const selectedSlot = selectedBlocks.length ? slots.find((s) => s.id === selectedBlocks[0].slotId) : null;
   const selectedTeacher = selectedSlot ? teachers[selectedSlot.teacher] : null;
 
   return (
@@ -157,19 +182,20 @@ const StudentSlotBrowser = () => {
             </p>
 
             <div className="flex flex-wrap gap-2">
-              {generateTimeBlocks(slotGroup[0].start_time, slotGroup[0].end_time).map(block => (
-                <button
-                  key={`${slotGroup[0].id}_${block.start}`}
-                  onClick={() => toggleBlock(slotGroup[0].id, block)}
-                  className={`px-3 py-1 rounded border ${
-                    isBlockSelected(slotGroup[0].id, block.start)
-                      ? "bg-green-500 text-white"
-                      : "bg-gray-100"
-                  }`}
-                >
-                  {block.start} - {block.end}
-                </button>
-              ))}
+              {generateTimeBlocks(slotGroup[0].start_time, slotGroup[0].end_time).map((block) => {
+                const baseClasses = isBlockSelected(slotGroup[0].id, block.start)
+                  ? "bg-yellow-400 text-white"
+                  : getBlockStatus(slotGroup[0].date, block.start, block.end);
+                return (
+                  <button
+                    key={`${slotGroup[0].id}_${block.start}`}
+                    onClick={() => toggleBlock(slotGroup[0].id, block)}
+                    className={`px-3 py-1 rounded border ${baseClasses}`}
+                  >
+                    {block.start} - {block.end}
+                  </button>
+                );
+              })}
             </div>
           </div>
         );
@@ -180,7 +206,7 @@ const StudentSlotBrowser = () => {
         <input
           type="text"
           value={topic}
-          onChange={e => setTopic(e.target.value)}
+          onChange={(e) => setTopic(e.target.value)}
           className="border p-2 rounded w-full mb-4"
           placeholder="Algebra, ReactJS, etc."
         />

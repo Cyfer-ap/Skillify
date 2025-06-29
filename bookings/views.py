@@ -12,6 +12,8 @@ from .serializers import (
 )
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
+from django.db.models import Q, Count
+from collections import defaultdict
 
 
 class ListTeachersAPIView(generics.ListAPIView):
@@ -115,3 +117,48 @@ class MultiBookAPIView(APIView):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({"created": created}, status=status.HTTP_201_CREATED)
+
+
+
+class AllAvailabilityAPIView(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = AvailabilitySerializer
+
+    def get_queryset(self):
+        today = timezone.now().date()
+
+        # Step 1: Get all upcoming availability
+        queryset = Availability.objects.filter(date__gte=today)
+
+        # Step 2: Get all overlapping bookings for future
+        sessions = TutoringSession.objects.filter(
+            status__in=["pending", "confirmed"],
+            date__gte=today,
+        )
+
+        # Step 3: Build a mapping: (teacher_id, date, start_time, end_time) → list of booked sessions
+        from collections import defaultdict
+        session_map = defaultdict(list)
+        for s in sessions:
+            key = (s.teacher_id, s.date, s.start_time, s.end_time)
+            session_map[key].append(s)
+
+        # Step 4: Filter valid availability (not fully booked)
+        valid_ids = []
+
+        for avail in queryset:
+            key = (avail.teacher_id, avail.date, avail.start_time, avail.end_time)
+            bookings = session_map.get(key, [])
+
+            if avail.session_type == "1v1" and len(bookings) == 0:
+                valid_ids.append(avail.id)
+
+            elif avail.session_type == "group":
+                if avail.max_students is None or len(bookings) < avail.max_students:
+                    valid_ids.append(avail.id)
+
+        return Availability.objects.filter(id__in=valid_ids).order_by("date", "start_time")
+
+
+
+

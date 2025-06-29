@@ -47,5 +47,6 @@ export const bookSession = (data) => BookingsAPI.post('book/', data);
 export const fetchMyBookings = () => BookingsAPI.get('my/');
 export const updateSessionStatus = (id, status) => BookingsAPI.patch(`update/${id}/`, { status });
 export const fetchMyAvailability = () => BookingsAPI.get('availability/my/');
+export const fetchAllAvailableSlots = () => BookingsAPI.get("availability/all/");
 
 

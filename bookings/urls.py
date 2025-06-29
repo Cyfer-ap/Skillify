@@ -22,6 +22,7 @@ urlpatterns = [
     path('availability/my/', MyAvailabilityAPIView.as_view(), name='my_availability'),
     path('my-slots/', MyAvailabilityAPIView.as_view(), name='my_slots'),
     path("multi-book/", MultiBookAPIView.as_view(), name="multi-book"),
+    path("availability/all/", AllAvailabilityAPIView.as_view(), name="all-availability"),
 
 ]
 
