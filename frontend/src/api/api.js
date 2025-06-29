@@ -1,7 +1,9 @@
 import axios from 'axios';
-import { refreshToken } from '../utils/authUtils'; // import refresh function
+import { refreshToken } from '../utils/authUtils'; // Your refreshToken function
 
-// 🔐 AUTH & PROFILE API (accounts-related)
+// -----------------------------
+// 🔐 ACCOUNTS API
+// -----------------------------
 const AccountsAPI = axios.create({
   baseURL: 'http://127.0.0.1:8000/api/accounts/',
   headers: {
@@ -10,7 +12,9 @@ const AccountsAPI = axios.create({
   withCredentials: false,
 });
 
+// -----------------------------
 // 📅 BOOKINGS API
+// -----------------------------
 const BookingsAPI = axios.create({
   baseURL: 'http://127.0.0.1:8000/api/bookings/',
   headers: {
@@ -19,8 +23,22 @@ const BookingsAPI = axios.create({
   withCredentials: false,
 });
 
-// ✅ Attach Bearer token to both
-[AccountsAPI, BookingsAPI].forEach((api) => {
+// -----------------------------
+// 🔔 NOTIFICATIONS API
+// -----------------------------
+const NotificationsAPI = axios.create({
+  baseURL: 'http://127.0.0.1:8000/api/notifications/',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  withCredentials: false,
+});
+
+// -----------------------------
+// ✅ SHARED INTERCEPTORS
+// -----------------------------
+[AccountsAPI, BookingsAPI, NotificationsAPI].forEach((api) => {
+  // Attach access token to every request
   api.interceptors.request.use((config) => {
     const token = localStorage.getItem('access');
     if (token) {
@@ -29,26 +47,21 @@ const BookingsAPI = axios.create({
     return config;
   });
 
-  // 🔁 Auto-refresh expired tokens on 401
+  // Handle 401 errors (token expired) with refresh flow
   api.interceptors.response.use(
     (response) => response,
     async (error) => {
       const originalRequest = error.config;
-
       if (error.response?.status === 401 && !originalRequest._retry) {
         originalRequest._retry = true;
         const newAccess = await refreshToken();
-
         if (newAccess) {
           originalRequest.headers.Authorization = `Bearer ${newAccess}`;
-          return api(originalRequest); // retry original request
+          return api(originalRequest); // Retry request
         }
-
-        // Clear invalid tokens if refresh fails
         localStorage.removeItem('access');
         localStorage.removeItem('refresh');
       }
-
       return Promise.reject(error);
     }
   );
@@ -72,3 +85,7 @@ export const fetchMyAvailability = () => BookingsAPI.get('availability/my/');
 export const fetchAllAvailableSlots = () => BookingsAPI.get("availability/all/");
 export const fetchTeacherSessions = () => BookingsAPI.get('teacher-sessions/');
 
+// -----------------------------
+// ✅ Notification API Endpoints
+// -----------------------------
+export const fetchNotifications = () => NotificationsAPI.get('/');

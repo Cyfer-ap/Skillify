@@ -12,32 +12,32 @@ const TeacherDashboard = () => {
       <ul className="list-disc list-inside space-y-2 text-gray-800">
         <li>
           <Link
-            to="/teacher/profile"
-            className="btn btn-primary"
-            style={{ margin: "5px" }}
+              to="/teacher/profile"
+              className="btn btn-primary"
+              style={{margin: "5px"}}
           >
             👤 Profile
           </Link>
         </li>
         <li>
           <Link
-            to="/teacher/bookings"
-            className="btn btn-primary"
-            style={{ margin: "5px" }}
+              to="/teacher/bookings"
+              className="btn btn-primary"
+              style={{margin: "5px"}}
           >
             My Teaching Sessions
           </Link>
         </li>
         <li>
           <Link to="/teacher/slots" className="text-blue-600 underline">
-          📅 View My Slots
-        </Link>
+            📅 View My Slots
+          </Link>
         </li>
         <li>
           <Link
-            to="/teacher/availability"
-            className="btn btn-primary"
-            style={{ margin: "5px" }}
+              to="/teacher/availability"
+              className="btn btn-primary"
+              style={{margin: "5px"}}
           >
             ➕ Create Availability Slot
           </Link>
@@ -48,20 +48,23 @@ const TeacherDashboard = () => {
           </Link>
         </li>
         <li>
+          <Link to="/notifications" className="text-blue-600 underline">🔔 Notifications</Link>
+        </li>
+        <li>
           📅 Manage your tutoring schedule
-          <TeacherSchedule />
+          <TeacherSchedule/>
         </li>
         <li>
           💬 Join upcoming live sessions
-          <UpcomingLiveSessions />
+          <UpcomingLiveSessions/>
         </li>
         <li>
           📄 Upload resources, notes, or homework
-          <UploadResources />
+          <UploadResources/>
         </li>
         <li>
           🌟 Track student feedback and earnings
-          <FeedbackAndEarnings />
+          <FeedbackAndEarnings/>
         </li>
       </ul>
     </div>

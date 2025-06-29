@@ -7,6 +7,7 @@ const BaseLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const isStudentDashboard = location.pathname.includes("/student/dashboard");
 
+
   // 💡 Prevent body scroll when sidebar is open
   useEffect(() => {
     const shouldLockScroll = isStudentDashboard && sidebarOpen;
@@ -59,21 +60,24 @@ const BaseLayout = () => {
           >
             &times;
           </button>
-          <ul>
-            <li>
-              <Link to="/student/profile" onClick={() => setSidebarOpen(false)}>👤 Profile</Link>
-            </li>
-            <li>
-              <Link to="/student/teachers" onClick={() => setSidebarOpen(false)}>🧑‍🏫 Browse Tutors</Link>
-            </li>
-            <li>
-              <Link to="/student/bookings" onClick={() => setSidebarOpen(false)}>📅 My Bookings</Link>
-            </li>
-          </ul>
+            <ul>
+                <li>
+                    <Link to="/student/profile" onClick={() => setSidebarOpen(false)}>👤 Profile</Link>
+                </li>
+                <li>
+                    <Link to="/student/teachers" onClick={() => setSidebarOpen(false)}>🧑‍🏫 Browse Tutors</Link>
+                </li>
+                <li>
+                    <Link to="/student/bookings" onClick={() => setSidebarOpen(false)}>📅 My Bookings</Link>
+                </li>
+                <li>
+                    <Link to="/notifications" onClick={() => setSidebarOpen(false)}>🔔 Notifications</Link>
+                </li>
+            </ul>
         </nav>
       )}
-      {/* Overlay when sidebar is open */}
-      {isStudentDashboard && sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)}></div>}
+        {/* Overlay when sidebar is open */}
+        {isStudentDashboard && sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)}></div>}
 
       {/* MAIN CONTENT */}
       <main style={{ flex: 1, overflowY: 'auto' }}>

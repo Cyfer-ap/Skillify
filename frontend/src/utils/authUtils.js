@@ -8,15 +8,15 @@ export const refreshToken = async () => {
     const refresh = localStorage.getItem('refresh');
     if (!refresh) return null;
 
-    const response = await axios.post(`${BASE_URL}/api/token/refresh/`, {
-      refresh: refresh,
+    const res = await axios.post('http://127.0.0.1:8000/api/token/refresh/', {
+      refresh,
     });
 
-    const newAccess = response.data.access;
-    localStorage.setItem('access', newAccess);
-    return newAccess;
-  } catch (error) {
-    console.error('Token refresh failed:', error);
+    localStorage.setItem('access', res.data.access);
+    return res.data.access;
+  } catch (err) {
+    console.error("Refresh token failed", err);
     return null;
   }
 };
+

@@ -12,8 +12,8 @@ from .serializers import (
 )
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from django.db.models import Q, Count
 from collections import defaultdict
+from notifications.utils import send_notification
 
 
 class ListTeachersAPIView(generics.ListAPIView):
@@ -37,8 +37,6 @@ class TeacherAvailabilityAPIView(generics.ListAPIView):
         ).order_by('date', 'start_time')
 
 
-
-# ✅ Use BookSessionSerializer (not full session one)
 class BookSessionAPIView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = BookSessionSerializer
@@ -47,6 +45,25 @@ class BookSessionAPIView(generics.CreateAPIView):
         context = super().get_serializer_context()
         context['request'] = self.request
         return context
+
+    def perform_create(self, serializer):
+        session = serializer.save(student=self.request.user)
+        student = self.request.user
+        teacher = session.teacher
+
+        # Notify both
+        send_notification(
+            user=teacher,
+            type="booking",
+            message=f"{student.username} has booked a session with you on {session.date} at {session.start_time}.",
+            link="/teacher/dashboard"
+        )
+        send_notification(
+            user=student,
+            type="booking",
+            message=f"You booked a session with {teacher.username} on {session.date} at {session.start_time}.",
+            link="/student/dashboard"
+        )
 
 
 class MyBookingsAPIView(generics.ListAPIView):
@@ -81,14 +98,43 @@ class UpdateBookingStatusAPIView(APIView):
                 if new_status == "confirmed":
                     session.status = "confirmed"
                     session.save()
+
+                    send_notification(
+                        user=session.teacher,
+                        type="confirmation",
+                        message=f"You confirmed the session with {session.student.username} on {session.date} at {session.start_time}.",
+                        link="/teacher/dashboard"
+                    )
+                    send_notification(
+                        user=session.student,
+                        type="confirmation",
+                        message=f"{session.teacher.username} confirmed your session on {session.date} at {session.start_time}.",
+                        link="/student/dashboard"
+                    )
+
                     return Response({"message": "Session confirmed"})
 
                 elif new_status == "cancelled":
                     if session.status in ["completed", "cancelled"]:
                         return Response({"detail": "Cannot cancel this session"}, status=403)
+
                     session.status = "cancelled"
                     session.cancelled_by = "teacher"
                     session.save()
+
+                    send_notification(
+                        user=session.teacher,
+                        type="confirmation",
+                        message=f"You cancelled the session with {session.student.username} on {session.date}.",
+                        link="/teacher/dashboard"
+                    )
+                    send_notification(
+                        user=session.student,
+                        type="confirmation",
+                        message=f"{session.teacher.username} cancelled your session on {session.date}.",
+                        link="/student/dashboard"
+                    )
+
                     return Response({"message": "Session cancelled"})
 
                 return Response({"detail": "Invalid teacher action"}, status=403)
@@ -100,16 +146,30 @@ class UpdateBookingStatusAPIView(APIView):
                     return Response({"detail": "Students can only cancel"}, status=403)
                 if session.status in ["completed", "cancelled"]:
                     return Response({"detail": "Cannot cancel this session"}, status=403)
+
                 session.status = "cancelled"
                 session.cancelled_by = "student"
                 session.save()
+
+                send_notification(
+                    user=session.student,
+                    type="confirmation",
+                    message=f"You cancelled the session with {session.teacher.username} on {session.date}.",
+                    link="/student/dashboard"
+                )
+                send_notification(
+                    user=session.teacher,
+                    type="confirmation",
+                    message=f"{session.student.username} cancelled the session on {session.date}.",
+                    link="/teacher/dashboard"
+                )
+
                 return Response({"message": "Session cancelled"})
 
             return Response({"detail": "Invalid role"}, status=400)
 
         except TutoringSession.DoesNotExist:
             return Response({"detail": "Session not found"}, status=404)
-
 
 
 class CreateAvailabilityAPIView(generics.CreateAPIView):
@@ -144,13 +204,25 @@ class MultiBookAPIView(APIView):
         for item in bookings:
             serializer = BookingSerializer(data=item)
             if serializer.is_valid():
-                serializer.save(student=request.user)
+                session = serializer.save(student=request.user)
                 created.append(serializer.data)
+
+                send_notification(
+                    user=session.student,
+                    type="booking",
+                    message=f"You booked a session with {session.teacher.username} on {session.date} at {session.start_time}.",
+                    link="/student/dashboard"
+                )
+                send_notification(
+                    user=session.teacher,
+                    type="booking",
+                    message=f"{session.student.username} booked a session with you on {session.date} at {session.start_time}.",
+                    link="/teacher/dashboard"
+                )
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({"created": created}, status=status.HTTP_201_CREATED)
-
 
 
 class AllAvailabilityAPIView(generics.ListAPIView):
@@ -160,32 +232,25 @@ class AllAvailabilityAPIView(generics.ListAPIView):
     def get_queryset(self):
         today = timezone.now().date()
 
-        # Step 1: Get all upcoming availability
         queryset = Availability.objects.filter(date__gte=today)
 
-        # Step 2: Get all overlapping bookings for future
         sessions = TutoringSession.objects.filter(
             status__in=["pending", "confirmed"],
             date__gte=today,
         )
 
-        # Step 3: Build a mapping: (teacher_id, date, start_time, end_time) → list of booked sessions
-        from collections import defaultdict
         session_map = defaultdict(list)
         for s in sessions:
             key = (s.teacher_id, s.date, s.start_time, s.end_time)
             session_map[key].append(s)
 
-        # Step 4: Filter valid availability (not fully booked)
         valid_ids = []
-
         for avail in queryset:
             key = (avail.teacher_id, avail.date, avail.start_time, avail.end_time)
             bookings = session_map.get(key, [])
 
             if avail.session_type == "1v1" and len(bookings) == 0:
                 valid_ids.append(avail.id)
-
             elif avail.session_type == "group":
                 if avail.max_students is None or len(bookings) < avail.max_students:
                     valid_ids.append(avail.id)
@@ -199,14 +264,6 @@ class TeacherSessionsAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-
-        # ✅ Debug check
-        print(f"[DEBUG] Auth user: {user}, role: {getattr(user, 'role', None)}")
-
         if not user or not hasattr(user, 'role') or user.role != 'teacher':
             raise PermissionDenied("Only teachers can view this.")
-
         return TutoringSession.objects.filter(teacher=user).order_by('-date', '-created_at')
-
-
-

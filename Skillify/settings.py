@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'accounts',
     'profiles',
     'bookings',
+    'notifications',
 ]
 
 MIDDLEWARE = [
@@ -136,7 +137,8 @@ REST_FRAMEWORK = {
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # your React frontend dev URL
+    "http://localhost:5173",
+    "http://localhost:5174",    # your React frontend dev URL
 ]
 
 # Optional: allow all origins during dev
