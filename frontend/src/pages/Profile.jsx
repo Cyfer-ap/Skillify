@@ -72,39 +72,48 @@ const StudentProfile = () => {
         <div>
           <button
             onClick={() => setEditMode(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded mb-4"
+            className="bg-blue-600 text-black px-4 py-2 rounded mb-4"
           >
-            ✏️ Edit Profile
+            ✏️  Edit Profile
           </button>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <p><strong>Full Name:</strong> {form.full_name || "N/A"}</p>
-            <p><strong>Gender:</strong> {form.gender || "N/A"}</p>
-            <p><strong>DOB:</strong> {form.dob || "N/A"}</p>
-            <p><strong>Location:</strong> {form.location || "N/A"}</p>
-            {isTeacher ? (
-              <>
-                <p><strong>Subjects:</strong> {form.subjects || "N/A"}</p>
-                <p><strong>Grade Levels:</strong> {form.grade_levels || "N/A"}</p>
-                <p><strong>Languages:</strong> {form.languages || "N/A"}</p>
-                <p><strong>Rate:</strong> ₹{form.rate || "N/A"}</p>
-                <p><strong>Mode:</strong> {form.mode || "N/A"}</p>
-                <p><strong>Experience:</strong> {form.experience || "N/A"}</p>
-                <p><strong>Certifications:</strong> {form.certifications || "N/A"}</p>
-                <p><strong>Bio:</strong> {form.bio || "N/A"}</p>
-              </>
-            ) : (
-              <>
-                <p><strong>Guardian Name:</strong> {form.guardian_name || "N/A"}</p>
-                <p><strong>Grade Level:</strong> {form.grade_level || "N/A"}</p>
-                <p><strong>Subjects of Interest:</strong> {form.subjects_interest || "N/A"}</p>
-                <p><strong>Preferred Languages:</strong> {form.preferred_languages || "N/A"}</p>
-                <p><strong>Learning Mode:</strong> {form.learning_mode || "N/A"}</p>
-                <p><strong>Time Slots:</strong> {form.time_slots || "N/A"}</p>
-                <p><strong>Payment Methods:</strong> {form.payment_methods || "N/A"}</p>
-                <p><strong>Goals:</strong> {form.goals || "N/A"}</p>
-              </>
-            )}
-          </div>
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+  {/* Left Card */}
+  <div className="bg-white shadow rounded p-4 ">
+    <h3 className="text-lg font-semibold border-b pb-2 mb-2">👩‍🎓 Personal Details</h3>
+    <p><strong>Full Name:</strong> {form.full_name || "N/A"}</p>
+    <p><strong>Gender:</strong> {form.gender || "N/A"}</p>
+    <p><strong>DOB:</strong> {form.dob || "N/A"}</p>
+    <p><strong>Location:</strong> {form.location || "N/A"}</p>
+  </div>
+
+  {/* Card 2 - Academic or Teacher Details */}
+  <div className="bg-white shadow-lg rounded p-4 mt-4">
+    <h3 className="text-lg font-semibold border-b pb-2 mb-2">📚 Academic Details</h3>
+    {isTeacher ? (
+      <>
+        <p><strong>Subjects:</strong> {form.subjects || "N/A"}</p>
+        <p><strong>Grade Levels:</strong> {form.grade_levels || "N/A"}</p>
+        <p><strong>Languages:</strong> {form.languages || "N/A"}</p>
+        <p><strong>Rate:</strong> ₹{form.rate || "N/A"}</p>
+        <p><strong>Mode:</strong> {form.mode || "N/A"}</p>
+        <p><strong>Experience:</strong> {form.experience || "N/A"}</p>
+        <p><strong>Certifications:</strong> {form.certifications || "N/A"}</p>
+        <p><strong>Bio:</strong> {form.bio || "N/A"}</p>
+      </>
+    ) : (
+      <>
+        <p><strong>Guardian Name:</strong> {form.guardian_name || "N/A"}</p>
+        <p><strong>Grade Level:</strong> {form.grade_level || "N/A"}</p>
+        <p><strong>Subjects of Interest:</strong> {form.subjects_interest || "N/A"}</p>
+        <p><strong>Preferred Languages:</strong> {form.preferred_languages || "N/A"}</p>
+        <p><strong>Learning Mode:</strong> {form.learning_mode || "N/A"}</p>
+        <p><strong>Time Slots:</strong> {form.time_slots || "N/A"}</p>
+        <p><strong>Payment Methods:</strong> {form.payment_methods || "N/A"}</p>
+        <p><strong>Goals:</strong> {form.goals || "N/A"}</p>
+      </>
+    )}
+  </div>
+</div>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
