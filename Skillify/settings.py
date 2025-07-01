@@ -170,3 +170,16 @@ SIMPLE_JWT = {
     'TOKEN_USER_CLASS': 'accounts.CustomUser',
     'SIGNING_KEY': SECRET_KEY,
 }
+
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'hello.skillify@gmail.com'
+EMAIL_HOST_PASSWORD = 'xsmc mrva nvqh wdjh'  # from above step
+DEFAULT_FROM_EMAIL = 'Skillify <hello.skillify@gmail.com>'
+
+
+

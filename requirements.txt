@@ -38,3 +38,4 @@ asgiref>=3.7        # required by channels
 requests>=2.31      # for external API calls (e.g., Razorpay, webhooks)
 uvicorn>=0.23       # ASGI server for development/production
 
+requests

@@ -2,6 +2,10 @@ from django.utils import timezone
 from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from collections import defaultdict
+
 from .models import Availability, TutoringSession
 from accounts.models import CustomUser
 from .serializers import (
@@ -10,9 +14,6 @@ from .serializers import (
     TutoringSessionSerializer,
     BookSessionSerializer
 )
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from collections import defaultdict
 from notifications.utils import send_notification
 
 
@@ -51,18 +52,22 @@ class BookSessionAPIView(generics.CreateAPIView):
         student = self.request.user
         teacher = session.teacher
 
-        # Notify both
+        # Notify both parties
         send_notification(
             user=teacher,
             type="booking",
             message=f"{student.username} has booked a session with you on {session.date} at {session.start_time}.",
-            link="/teacher/dashboard"
+            link="/teacher/dashboard",
+            email=True,
+            subject="📅 New Session Booking"
         )
         send_notification(
             user=student,
             type="booking",
             message=f"You booked a session with {teacher.username} on {session.date} at {session.start_time}.",
-            link="/student/dashboard"
+            link="/student/dashboard",
+            email=True,
+            subject="✅ Session Booking Confirmed"
         )
 
 
@@ -103,13 +108,17 @@ class UpdateBookingStatusAPIView(APIView):
                         user=session.teacher,
                         type="confirmation",
                         message=f"You confirmed the session with {session.student.username} on {session.date} at {session.start_time}.",
-                        link="/teacher/dashboard"
+                        link="/teacher/dashboard",
+                        email=True,
+                        subject="✅ Session Confirmed"
                     )
                     send_notification(
                         user=session.student,
                         type="confirmation",
                         message=f"{session.teacher.username} confirmed your session on {session.date} at {session.start_time}.",
-                        link="/student/dashboard"
+                        link="/student/dashboard",
+                        email=True,
+                        subject="📢 Your Session is Confirmed"
                     )
 
                     return Response({"message": "Session confirmed"})
@@ -126,13 +135,17 @@ class UpdateBookingStatusAPIView(APIView):
                         user=session.teacher,
                         type="confirmation",
                         message=f"You cancelled the session with {session.student.username} on {session.date}.",
-                        link="/teacher/dashboard"
+                        link="/teacher/dashboard",
+                        email=True,
+                        subject="❌ Session Cancelled"
                     )
                     send_notification(
                         user=session.student,
                         type="confirmation",
                         message=f"{session.teacher.username} cancelled your session on {session.date}.",
-                        link="/student/dashboard"
+                        link="/student/dashboard",
+                        email=True,
+                        subject="⚠️ Your Session was Cancelled"
                     )
 
                     return Response({"message": "Session cancelled"})
@@ -155,13 +168,17 @@ class UpdateBookingStatusAPIView(APIView):
                     user=session.student,
                     type="confirmation",
                     message=f"You cancelled the session with {session.teacher.username} on {session.date}.",
-                    link="/student/dashboard"
+                    link="/student/dashboard",
+                    email=True,
+                    subject="❌ Session Cancelled"
                 )
                 send_notification(
                     user=session.teacher,
                     type="confirmation",
                     message=f"{session.student.username} cancelled the session on {session.date}.",
-                    link="/teacher/dashboard"
+                    link="/teacher/dashboard",
+                    email=True,
+                    subject="⚠️ Your Session was Cancelled"
                 )
 
                 return Response({"message": "Session cancelled"})
@@ -211,13 +228,17 @@ class MultiBookAPIView(APIView):
                     user=session.student,
                     type="booking",
                     message=f"You booked a session with {session.teacher.username} on {session.date} at {session.start_time}.",
-                    link="/student/dashboard"
+                    link="/student/dashboard",
+                    email=True,
+                    subject="✅ Multi-Session Booking Confirmed"
                 )
                 send_notification(
                     user=session.teacher,
                     type="booking",
                     message=f"{session.student.username} booked a session with you on {session.date} at {session.start_time}.",
-                    link="/teacher/dashboard"
+                    link="/teacher/dashboard",
+                    email=True,
+                    subject="📅 New Session Booked"
                 )
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -231,9 +252,7 @@ class AllAvailabilityAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         today = timezone.now().date()
-
         queryset = Availability.objects.filter(date__gte=today)
-
         sessions = TutoringSession.objects.filter(
             status__in=["pending", "confirmed"],
             date__gte=today,

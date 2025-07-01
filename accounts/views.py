@@ -2,6 +2,7 @@ from rest_framework import status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from notifications.utils import send_notification
 from .serializers import RegisterSerializer
 from rest_framework.permissions import IsAuthenticated
 from django.http import JsonResponse
@@ -29,6 +30,17 @@ class RegisterAPIView(APIView):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
+
+            # ✅ Send welcome notification & email
+            send_notification(
+                user=user,
+                type="system",
+                message=f"Welcome {user.username}! Your Skillify account has been created.",
+                link="/",
+                email=True,
+                subject="🎉 Welcome to Skillify!"
+            )
+
             return Response({
                 "message": "User registered successfully",
                 "user": {
