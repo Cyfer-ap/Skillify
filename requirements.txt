@@ -29,13 +29,15 @@ whitenoise>=6.6.0
 # Optional (Dev utilities)
 ipython>=8.0
 
-djangoframework-simplejwt<5.3.0
+# JWT authentication for DRF
+djangorestframework-simplejwt<5.3.0
 
 # ImageField Support
-Pillow>=10.0
+Pillow
 
 asgiref>=3.7        # required by channels
 requests>=2.31      # for external API calls (e.g., Razorpay, webhooks)
 uvicorn>=0.23       # ASGI server for development/production
 
-requests
+setuptools>=67.0
+
