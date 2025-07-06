@@ -41,13 +41,14 @@ class AvailabilitySerializer(serializers.ModelSerializer):
 class TutoringSessionSerializer(serializers.ModelSerializer):
     student_name = serializers.CharField(source='student.username', read_only=True)
     teacher_name = serializers.CharField(source='teacher.username', read_only=True)
+    scheduled_time = serializers.DateTimeField(read_only=True)
 
     class Meta:
         model = TutoringSession
         fields = [
             'id', 'student', 'student_name', 'teacher', 'teacher_name',
             'date', 'start_time', 'end_time', 'topic', 'status', 'created_at',
-            'cancelled_by',
+            'cancelled_by', 'scheduled_time', 'jitsi_link',
         ]
 
 

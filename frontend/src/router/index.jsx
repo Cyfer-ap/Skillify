@@ -16,6 +16,7 @@ import StudentSlotBrowser from "../pages/StudentSlotBrowser.jsx";
 import AllTeachersSlotBrowser from "../pages/AllTeachersSlotBrowser.jsx";
 import TeacherSessions from "../pages/TeacherSessions";
 import Notifications from "../pages/Notifications.jsx";
+import VideoCallPage from "../pages/VideoCallPage.jsx";
 
 const router = createBrowserRouter([
   {
@@ -43,6 +44,9 @@ const router = createBrowserRouter([
       { path: "/student/slots", element: <AllTeachersSlotBrowser /> },
       { path: "/teacher/sessions", element: <TeacherSessions />},
       { path: "/notifications", element: <Notifications /> },
+
+    //     Meetings
+      { path: "/video-call/:sessionId", element: <VideoCallPage />},
 
         
     ],

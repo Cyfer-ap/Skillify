@@ -1,4 +1,4 @@
-
+from datetime import datetime
 from django.db import models
 from accounts.models import CustomUser
 from django.utils import timezone
@@ -72,6 +72,7 @@ class TutoringSession(models.Model):
     topic = models.CharField(max_length=255, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
+    jitsi_link = models.URLField(null=True, blank=True)
 
     cancelled_by = models.CharField(
         max_length=10,
@@ -79,6 +80,10 @@ class TutoringSession(models.Model):
         blank=True,
         null=True
     )
+
+    @property
+    def scheduled_time(self):
+        return datetime.combine(self.date, self.start_time)
 
     def __str__(self):
         return f"{self.student.username} -> {self.teacher.username} | {self.date} ({self.status})"

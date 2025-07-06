@@ -1,9 +1,10 @@
 import axios from 'axios';
 import { refreshToken } from '../utils/authUtils'; // Your refreshToken function
 
-// -----------------------------
-// 🔐 ACCOUNTS API
-// -----------------------------
+export const fetchBookedSessions = () => {
+  return axios.get("/api/bookings/student/booked-sessions/");
+};
+
 const AccountsAPI = axios.create({
   baseURL: 'http://127.0.0.1:8000/api/accounts/',
   headers: {

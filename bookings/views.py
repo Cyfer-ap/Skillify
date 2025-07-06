@@ -15,6 +15,8 @@ from .serializers import (
     BookSessionSerializer
 )
 from notifications.utils import send_notification
+from datetime import timedelta
+from rest_framework.decorators import api_view, permission_classes
 
 
 class ListTeachersAPIView(generics.ListAPIView):
@@ -69,6 +71,9 @@ class BookSessionAPIView(generics.CreateAPIView):
             email=True,
             subject="✅ Session Booking Confirmed"
         )
+
+        # Check and generate Jitsi link if needed
+        check_and_generate_link()  # Ensure this is called after booking the session.
 
 
 class MyBookingsAPIView(generics.ListAPIView):
@@ -286,3 +291,38 @@ class TeacherSessionsAPIView(generics.ListAPIView):
         if not user or not hasattr(user, 'role') or user.role != 'teacher':
             raise PermissionDenied("Only teachers can view this.")
         return TutoringSession.objects.filter(teacher=user).order_by('-date', '-created_at')
+
+
+def generate_jitsi_link(session):
+    """Generate a Jitsi link for the session"""
+    base_url = "https://meet.jit.si"
+    meeting_name = f"{session.teacher.username}_{session.student.username}_{session.id}"
+    link = f"{base_url}/{meeting_name}"
+    return link
+
+def check_and_generate_link():
+    """Check upcoming sessions within 10 minutes and assign Jitsi links"""
+    now = timezone.now()
+    upcoming_time = now + timedelta(minutes=10)
+
+    # Fetch sessions scheduled within the next 10 minutes that don't have a Jitsi link
+    sessions = TutoringSession.objects.filter(
+        date=now.date(),
+        start_time__lte=upcoming_time.time(),
+        jitsi_link__isnull=True
+    )
+
+    for session in sessions:
+        session.jitsi_link = generate_jitsi_link(session)
+        session.save()
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def student_booked_sessions(request):
+    student = request.user
+    sessions = TutoringSession.objects.filter(student=student)
+    serializer = TutoringSessionSerializer(sessions, many=True)
+    return Response(serializer.data)
+

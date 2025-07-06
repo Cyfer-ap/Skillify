@@ -44,9 +44,13 @@ const MyBookings = () => {
               <p><strong>When:</strong> {s.date} | {dayjs(`2000-01-01T${s.start_time}`).format("hh:mm A")} - {dayjs(`2000-01-01T${s.end_time}`).format("hh:mm A")}</p>
               <p><strong>Status:</strong> <span className="capitalize">{s.status}</span></p>
               <p><strong>Topic:</strong> {s.topic || "N/A"}</p>
-              {/* Placeholder if we extend later */}
-              {/* <p><strong>Amount:</strong> ₹xxx</p>
-              <p><strong>Platform:</strong> Zoom</p> */}
+              {s.jitsi_link ? (
+                <a href={s.jitsi_link} target="_blank" rel="noopener noreferrer" className="text-blue-600">
+                  Join the Class
+                </a>
+              ) : (
+                <p>Class link will be available soon.</p>
+              )}
               {userRole === "student" && s.status !== "cancelled" && (
                 <button
                   onClick={() => handleCancel(s.id)}

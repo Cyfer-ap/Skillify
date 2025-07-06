@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchTeacherSessions, updateSessionStatus } from "../api/api";
+import dayjs from "dayjs";
 
 const TeacherSessions = () => {
   const [sessions, setSessions] = useState([]);
@@ -49,10 +50,20 @@ const TeacherSessions = () => {
             <li key={s.id} className="bg-white p-4 rounded shadow">
               <p><strong>Student:</strong> {s.student_name}</p>
               <p><strong>Date:</strong> {s.date}</p>
-              <p><strong>Time:</strong> {s.start_time} - {s.end_time}</p>
+              <p><strong>Time:</strong> {dayjs(`2000-01-01T${s.start_time}`).format("hh:mm A")} - {dayjs(`2000-01-01T${s.end_time}`).format("hh:mm A")}</p>
               <p><strong>Topic:</strong> {s.topic || "N/A"}</p>
               <p><strong>Status:</strong> <span className="capitalize">{s.status}</span></p>
 
+              {/* Display Jitsi Link if Available */}
+              {s.jitsi_link ? (
+                <a href={s.jitsi_link} target="_blank" rel="noopener noreferrer" className="text-blue-600">
+                  Join the Class
+                </a>
+              ) : (
+                <p>Class link will be available soon.</p>
+              )}
+
+              {/* Actions based on session status */}
               {s.status === "pending" && (
                 <div className="flex space-x-4 mt-2">
                   <button

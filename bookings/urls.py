@@ -24,5 +24,6 @@ urlpatterns = [
     path("multi-book/", MultiBookAPIView.as_view(), name="multi-book"),
     path("availability/all/", AllAvailabilityAPIView.as_view(), name="all-availability"),
     path('teacher-sessions/', TeacherSessionsAPIView.as_view(), name='teacher_sessions'),
+    path('student/booked-sessions/', student_booked_sessions, name='student_booked_sessions'),
 ]
 
