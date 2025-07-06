@@ -1,55 +1,21 @@
 import { useEffect, useState } from "react";
-
-// Mock API functions for demo
-const mockFetchTeachers = async () => ({
-  data: [
-    { id: 1, username: "Dr. Sarah Johnson", subject: "Mathematics", avatar: "👩‍🏫" },
-    { id: 2, username: "Prof. Michael Chen", subject: "Physics", avatar: "👨‍🏫" },
-    { id: 3, username: "Ms. Emily Davis", subject: "Chemistry", avatar: "👩‍🔬" },
-    { id: 4, username: "Mr. David Wilson", subject: "Biology", avatar: "👨‍🔬" },
-  ]
-});
-
-const mockFetchAvailableSlots = async () => ({
-  data: [
-    { id: 1, teacher: 1, date: "2025-07-08", start_time: "09:00", end_time: "12:00", subject: "Mathematics", rate: 500, rate_type: "per hour", platform: "Zoom", grade_level: "Grade 10-12" },
-    { id: 2, teacher: 1, date: "2025-07-09", start_time: "14:00", end_time: "17:00", subject: "Mathematics", rate: 500, rate_type: "per hour", platform: "Zoom", grade_level: "Grade 10-12" },
-    { id: 3, teacher: 2, date: "2025-07-08", start_time: "10:00", end_time: "13:00", subject: "Physics", rate: 600, rate_type: "per hour", platform: "Google Meet", grade_level: "Grade 11-12" },
-    { id: 4, teacher: 3, date: "2025-07-10", start_time: "15:00", end_time: "18:00", subject: "Chemistry", rate: 550, rate_type: "per hour", platform: "Zoom", grade_level: "Grade 10-12" },
-  ]
-});
-
-const mockFetchMyBookings = async () => ({
-  data: [
-    { date: "2025-07-08", start_time: "10:00", end_time: "11:00", status: "confirmed" },
-    { date: "2025-07-09", start_time: "15:00", end_time: "16:00", status: "pending" },
-  ]
-});
+import { fetchAvailability, bookSession, fetchTeachers, fetchBookedSessions } from "../api/api";
+import dayjs from "dayjs";
+import { useNavigate } from "react-router-dom";
 
 const generateTimeBlocks = (start, end, interval = 30) => {
   const result = [];
-  const [startHour, startMin] = start.split(':').map(Number);
-  const [endHour, endMin] = end.split(':').map(Number);
-  
-  let currentHour = startHour;
-  let currentMin = startMin;
-  
-  while (currentHour < endHour || (currentHour === endHour && currentMin < endMin)) {
-    const nextMin = currentMin + interval;
-    const nextHour = currentHour + Math.floor(nextMin / 60);
-    const finalMin = nextMin % 60;
-    
-    if (nextHour < endHour || (nextHour === endHour && finalMin <= endMin)) {
-      result.push({
-        start: `${currentHour.toString().padStart(2, '0')}:${currentMin.toString().padStart(2, '0')}`,
-        end: `${nextHour.toString().padStart(2, '0')}:${finalMin.toString().padStart(2, '0')}`
-      });
-    }
-    
-    currentHour = nextHour;
-    currentMin = finalMin;
+  let current = dayjs(`2000-01-01T${start}`);
+  const endTime = dayjs(`2000-01-01T${end}`);
+
+  while (current.add(interval, "minute").isBefore(endTime) || current.add(interval, "minute").isSame(endTime)) {
+    const next = current.add(interval, "minute");
+    result.push({
+      start: current.format("HH:mm"),
+      end: next.format("HH:mm"),
+    });
+    current = next;
   }
-  
   return result;
 };
 
@@ -58,62 +24,135 @@ const StudentSlotBrowser = () => {
   const [teachers, setTeachers] = useState({});
   const [topic, setTopic] = useState("");
   const [selectedBlocks, setSelectedBlocks] = useState([]);
-  const [allBookings, setAllBookings] = useState([]);
   const [hoveredSlot, setHoveredSlot] = useState(null);
   const [hoveredBlock, setHoveredBlock] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [bookedSlots, setBookedSlots] = useState([]); // Track booked slots
+  const [pendingSlots, setPendingSlots] = useState([]); // Track pending slots
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const loadAllData = async () => {
-      try {
-        setIsLoading(true);
-        const [teachersRes, availabilityRes, bookingsRes] = await Promise.all([
-          mockFetchTeachers(),
-          mockFetchAvailableSlots(),
-          mockFetchMyBookings(),
-        ]);
+  const loadAllData = async () => {
+    try {
+      setIsLoading(true);
+      const res = await fetchTeachers();
+      const teacherMap = {};
+      const allSlots = [];
 
-        const teacherMap = {};
-        teachersRes.data.forEach((t) => {
-          teacherMap[t.id] = t;
-        });
-
-        const uniqueMap = {};
-        availabilityRes.data.forEach((s) => {
-          const key = `${s.teacher}_${s.date}_${s.start_time}_${s.end_time}`;
-          uniqueMap[key] = s;
-        });
-
-        setTeachers(teacherMap);
-        setSlots(Object.values(uniqueMap));
-        setAllBookings(bookingsRes.data);
-      } catch (err) {
-        console.error("Loading error:", err);
-      } finally {
-        setIsLoading(false);
+      for (const t of res.data) {
+        teacherMap[t.id] = t;
+        const availRes = await fetchAvailability(t.id);
+        allSlots.push(...availRes.data);
       }
-    };
-    loadAllData();
-  }, []);
+
+      const uniqueMap = {};
+      allSlots.forEach(s => {
+        const key = `${s.teacher}_${s.date}_${s.start_time}_${s.end_time}`;
+        uniqueMap[key] = s;
+      });
+
+      setTeachers(teacherMap);
+      setSlots(Object.values(uniqueMap));
+
+      // ✅ Fetch booked & pending sessions
+      const bookedRes = await fetchBookedSessions();
+      const booked = [];
+      const pending = [];
+
+      for (const session of bookedRes.data) {
+        const matchingSlot = Object.values(uniqueMap).find(slot =>
+          slot.teacher === session.teacher &&
+          slot.date === session.date &&
+          session.start_time >= slot.start_time &&
+          session.end_time <= slot.end_time
+        );
+
+        if (matchingSlot) {
+          const blocks = generateTimeBlocks(session.start_time.slice(0, 5), session.end_time.slice(0, 5));
+          for (const block of blocks) {
+            const key = `${matchingSlot.id}_${block.start}`;
+            if (session.status === 'confirmed') {
+              booked.push(key);
+            } else if (session.status === 'pending') {
+              pending.push(key);
+            }
+          }
+        }
+      }
+
+      setBookedSlots(booked);
+      setPendingSlots(pending);
+    } catch (err) {
+      console.error("Error loading data:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  loadAllData(); // ✅ Run once when component mounts
+}, []);
+
+
+  const getSlotStatus = (slotId, startTime) => {
+    const blockKey = `${slotId}_${startTime}`;
+    if (bookedSlots.includes(blockKey)) return 'booked';
+    if (pendingSlots.includes(blockKey)) return 'pending';
+    return 'available';
+  };
+
+  const getBlockStyles = (slotId, block) => {
+    const status = getSlotStatus(slotId, block.start);
+    const isSelected = isBlockSelected(slotId, block.start);
+
+    if (isSelected) {
+      return 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-amber-400 shadow-lg shadow-amber-500/30 transform scale-105';
+    }
+
+    switch (status) {
+      case 'booked':
+        return 'bg-gradient-to-r from-red-500 to-pink-500 text-white border-red-400 cursor-not-allowed opacity-75';
+      case 'pending':
+        return 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-yellow-400 cursor-not-allowed opacity-75';
+      case 'available':
+        return 'bg-gradient-to-r from-gray-700 to-gray-600 text-gray-200 border-gray-500 hover:from-cyan-500 hover:to-blue-500 hover:text-white hover:border-cyan-400 hover:shadow-lg hover:shadow-cyan-500/30 hover:transform hover:scale-105';
+      default:
+        return 'bg-gray-700 text-gray-200 border-gray-600';
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'booked': return '🚫';
+      case 'pending': return '⏳';
+      case 'available': return '✅';
+      default: return '';
+    }
+  };
 
   const toggleBlock = (slotId, block) => {
-    const slot = slots.find((s) => s.id === slotId);
+    const status = getSlotStatus(slotId, block.start);
+
+    if (status === 'booked' || status === 'pending') {
+      return alert(`❌ This slot is ${status}. Please select an available slot.`);
+    }
+
+    const slot = slots.find(s => s.id === slotId);
     const teacherId = slot.teacher;
 
     if (selectedBlocks.length > 0) {
-      const currentTeacher = slots.find((s) => s.id === selectedBlocks[0].slotId)?.teacher;
+      const currentTeacher = slots.find(s => s.id === selectedBlocks[0].slotId)?.teacher;
       if (teacherId !== currentTeacher) {
-        alert("❌ Book from only one teacher at a time.");
-        return;
+        return alert("❌ You can only book slots from one teacher at a time.");
       }
     }
 
     const key = `${slotId}_${block.start}`;
-    const exists = selectedBlocks.find((b) => b.key === key);
+    const exists = selectedBlocks.find(b => b.key === key);
+
     if (exists) {
-      setSelectedBlocks((prev) => prev.filter((b) => b.key !== key));
+      setSelectedBlocks(prev => prev.filter(b => b.key !== key));
     } else {
-      setSelectedBlocks((prev) => [
+      setSelectedBlocks(prev => [
         ...prev,
         {
           key,
@@ -126,23 +165,12 @@ const StudentSlotBrowser = () => {
   };
 
   const isBlockSelected = (slotId, start) =>
-    selectedBlocks.some((b) => b.slotId === slotId && b.start === start);
-
-  const getBlockStatus = (date, startTime, endTime) => {
-    const match = allBookings.find(
-      (b) => b.date === date && b.start_time === startTime
-    );
-
-    if (match) {
-      if (match.status === "pending") return { bg: "bg-purple-500", text: "text-white", label: "Pending" };
-      if (match.status === "confirmed") return { bg: "bg-green-500", text: "text-white", label: "Confirmed" };
-      return { bg: "bg-red-500", text: "text-white", label: "Unavailable" };
-    }
-    return { bg: "bg-gray-100", text: "text-gray-700", label: "Available" };
-  };
+    selectedBlocks.some(b => b.slotId === slotId && b.start === start);
 
   const isContinuous = (blocks) => {
-    const sorted = [...blocks].sort((a, b) => a.start.localeCompare(b.start));
+    const sorted = [...blocks].sort((a, b) =>
+      dayjs(`2000-01-01T${a.start}`).isBefore(dayjs(`2000-01-01T${b.start}`)) ? -1 : 1
+    );
     for (let i = 1; i < sorted.length; i++) {
       if (sorted[i - 1].end !== sorted[i].start) return false;
     }
@@ -150,20 +178,15 @@ const StudentSlotBrowser = () => {
   };
 
   const handleBook = async () => {
-    if (selectedBlocks.length === 0) {
-      alert("Select at least one slot.");
-      return;
-    }
-    if (!isContinuous(selectedBlocks)) {
-      alert("Slots must be continuous.");
-      return;
-    }
+    if (selectedBlocks.length === 0) return alert("Please select at least one slot.");
+    if (!isContinuous(selectedBlocks)) return alert("❌ Please select continuous time slots only.");
 
-    const sorted = [...selectedBlocks].sort((a, b) => a.start.localeCompare(b.start));
+    const sorted = [...selectedBlocks].sort((a, b) =>
+      dayjs(`2000-01-01T${a.start}`).isBefore(dayjs(`2000-01-01T${b.start}`)) ? -1 : 1
+    );
     const first = sorted[0];
     const last = sorted[sorted.length - 1];
-    const refSlot = slots.find((s) => s.id === first.slotId);
-
+    const refSlot = slots.find(s => s.id === first.slotId);
     const payload = {
       teacher: refSlot.teacher,
       date: refSlot.date,
@@ -173,317 +196,234 @@ const StudentSlotBrowser = () => {
     };
 
     try {
-      // Mock booking success
-      console.log("Booking payload:", payload);
+      await bookSession(payload);
       alert("✅ Session booked successfully!");
       setSelectedBlocks([]);
-      setTopic("");
+
+      // Add booked slots to the state
+      selectedBlocks.forEach(block => {
+        setBookedSlots(prev => [...prev, `${block.slotId}_${block.start}`]);
+      });
+
+      navigate("/student/bookings");
     } catch (err) {
       console.error(err);
-      alert("❌ Booking failed.");
+      alert("❌ Booking failed. Try again.");
     }
   };
 
   const grouped = {};
-  slots.forEach((s) => {
+  slots.forEach(s => {
     const key = `${s.teacher}_${s.date}`;
     if (!grouped[key]) grouped[key] = [];
     grouped[key].push(s);
   });
 
-  const selectedSlot = selectedBlocks.length ? slots.find((s) => s.id === selectedBlocks[0].slotId) : null;
+  const selectedSlot = selectedBlocks.length ? slots.find(s => s.id === selectedBlocks[0].slotId) : null;
   const selectedTeacher = selectedSlot ? teachers[selectedSlot.teacher] : null;
 
   if (isLoading) {
     return (
-      <div style={{ 
-        minHeight: '100vh', 
-        backgroundColor: '#000', 
-        color: 'white',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '20px', animation: 'pulse 2s infinite' }}>📅</div>
-          <h2 style={{ fontSize: '1.5rem', color: '#22d3ee' }}>Loading available slots...</h2>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-black to-gray-800">
+        <div className="text-center animate-pulse">
+          <div className="text-6xl mb-6 animate-spin">⏰</div>
+          <div className="h-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-full w-48 mx-auto mb-4 animate-pulse"></div>
+          <h2 className="text-2xl text-transparent bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text font-bold">
+            Loading available slots...
+          </h2>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      backgroundColor: '#000', 
-      color: 'white',
-      padding: '20px',
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
-      {/* Background Effects */}
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: 'radial-gradient(circle at 20% 20%, rgba(34, 211, 238, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.1) 0%, transparent 50%)',
-        pointerEvents: 'none'
-      }}></div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 text-white px-6 py-8 relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-20 left-20 w-72 h-72 bg-cyan-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-pink-500/10 rounded-full blur-3xl animate-pulse delay-2000"></div>
+      </div>
 
-      <div style={{ position: 'relative', zIndex: 10, maxWidth: '1200px', margin: '0 auto' }}>
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <div style={{ fontSize: '4rem', marginBottom: '20px', animation: 'bounce 2s infinite' }}>📅</div>
-          <h1 style={{
-            fontSize: '2.5rem',
-            fontWeight: 'bold',
-            margin: 0,
-            marginBottom: '16px',
-            background: 'linear-gradient(135deg, #22d3ee 0%, #a855f7 50%, #ec4899 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text'
-          }}>
-            Available Tutor Slots
+      <div className="relative z-10 max-w-7xl mx-auto">
+        {/* Header Section */}
+        <div className="text-center mb-12">
+          <div className="text-7xl mb-6 animate-bounce">🎯</div>
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent mb-6">
+            Book Your Learning Session
           </h1>
-          <p style={{
-            fontSize: '1.1rem',
-            color: '#9ca3af',
-            maxWidth: '600px',
-            margin: '0 auto'
-          }}>
-            Browse and book sessions with our expert tutors. Select continuous time slots to schedule your learning session.
+          <p className="text-gray-300 max-w-2xl mx-auto text-lg leading-relaxed">
+            Choose from our expert tutors and book your perfect learning session.
+            Select continuous time slots that work best for your schedule.
           </p>
         </div>
 
-        {/* Slots Grid */}
-        <div style={{ display: 'grid', gap: '24px', marginBottom: '40px' }}>
-          {Object.entries(grouped).map(([groupKey, slotGroup]) => {
-            const [teacherId, date] = groupKey.split("_");
-            const teacher = teachers[teacherId];
-            const slot = slotGroup[0];
-            const isHovered = hoveredSlot === groupKey;
-            
-            return (
-              <div
-                key={groupKey}
-                style={{
-                  backgroundColor: 'rgba(17, 24, 39, 0.6)',
-                  backdropFilter: 'blur(12px)',
-                  border: isHovered ? '1px solid #22d3ee' : '1px solid rgba(55, 65, 81, 0.3)',
-                  borderRadius: '20px',
-                  padding: '32px',
-                  transition: 'all 0.4s ease',
-                  transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
-                  boxShadow: isHovered ? '0 20px 40px rgba(34, 211, 238, 0.2)' : 'none'
-                }}
-                onMouseEnter={() => setHoveredSlot(groupKey)}
-                onMouseLeave={() => setHoveredSlot(null)}
-              >
-                {/* Teacher Info */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
-                  <div style={{
-                    fontSize: '3rem',
-                    width: '60px',
-                    height: '60px',
-                    backgroundColor: 'rgba(34, 211, 238, 0.2)',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: '2px solid #22d3ee'
-                  }}>
-                    {teacher?.avatar || '👨‍🏫'}
-                  </div>
-                  <div>
-                    <h3 style={{
-                      fontSize: '1.5rem',
-                      fontWeight: '600',
-                      margin: 0,
-                      marginBottom: '4px',
-                      color: '#22d3ee'
-                    }}>
-                      {teacher?.username || "Tutor"}
-                    </h3>
-                    <p style={{
-                      fontSize: '1rem',
-                      color: '#9ca3af',
-                      margin: 0,
-                      fontWeight: '500'
-                    }}>
-                      📅 {new Date(date).toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Session Details */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                  gap: '16px',
-                  marginBottom: '24px',
-                  padding: '20px',
-                  backgroundColor: 'rgba(55, 65, 81, 0.2)',
-                  borderRadius: '12px'
-                }}>
-                  <div>
-                    <span style={{ color: '#22d3ee', fontWeight: '600' }}>📚 Subject:</span>
-                    <span style={{ marginLeft: '8px' }}>{slot.subject || "N/A"}</span>
-                  </div>
-                  <div>
-                    <span style={{ color: '#a855f7', fontWeight: '600' }}>💰 Rate:</span>
-                    <span style={{ marginLeft: '8px' }}>₹{slot.rate || 0} ({slot.rate_type})</span>
-                  </div>
-                  <div>
-                    <span style={{ color: '#10b981', fontWeight: '600' }}>🎓 Grade:</span>
-                    <span style={{ marginLeft: '8px' }}>{slot.grade_level || "N/A"}</span>
-                  </div>
-                  <div>
-                    <span style={{ color: '#f59e0b', fontWeight: '600' }}>🔗 Platform:</span>
-                    <span style={{ marginLeft: '8px' }}>{slot.platform || "N/A"}</span>
-                  </div>
-                </div>
-
-                {/* Time Blocks */}
-                <div>
-                  <h4 style={{
-                    fontSize: '1.1rem',
-                    fontWeight: '600',
-                    marginBottom: '16px',
-                    color: '#ec4899'
-                  }}>
-                    ⏰ Available Time Slots
-                  </h4>
-                  <div style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '8px'
-                  }}>
-                    {generateTimeBlocks(slot.start_time, slot.end_time).map((block) => {
-                      const blockKey = `${slot.id}_${block.start}`;
-                      const isSelected = isBlockSelected(slot.id, block.start);
-                      const status = getBlockStatus(slot.date, block.start, block.end);
-                      const isHoveredBlock = hoveredBlock === blockKey;
-                      
-                      return (
-                        <button
-                          key={blockKey}
-                          onClick={() => toggleBlock(slot.id, block)}
-                          style={{
-                            padding: '12px 16px',
-                            borderRadius: '8px',
-                            border: isSelected ? '2px solid #f59e0b' : isHoveredBlock ? '2px solid #22d3ee' : '1px solid rgba(75, 85, 99, 0.3)',
-                            backgroundColor: isSelected ? '#f59e0b' : status.bg === 'bg-gray-100' ? 'rgba(55, 65, 81, 0.3)' : 
-                                           status.bg === 'bg-purple-500' ? '#8b5cf6' :
-                                           status.bg === 'bg-green-500' ? '#10b981' : '#ef4444',
-                            color: isSelected ? 'white' : status.text === 'text-white' ? 'white' : '#e5e7eb',
-                            fontSize: '0.875rem',
-                            fontWeight: '500',
-                            cursor: status.bg === 'bg-gray-100' ? 'pointer' : 'not-allowed',
-                            transition: 'all 0.3s ease',
-                            transform: isHoveredBlock && status.bg === 'bg-gray-100' ? 'translateY(-2px)' : 'translateY(0)',
-                            opacity: status.bg === 'bg-gray-100' ? 1 : 0.7
-                          }}
-                          onMouseEnter={() => setHoveredBlock(blockKey)}
-                          onMouseLeave={() => setHoveredBlock(null)}
-                          disabled={status.bg !== 'bg-gray-100'}
-                        >
-                          <div>{block.start} - {block.end}</div>
-                          {status.label !== 'Available' && (
-                            <div style={{ fontSize: '0.75rem', marginTop: '2px' }}>
-                              {status.label}
-                            </div>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+        {/* Legend */}
+        <div className="mb-8 p-6 rounded-2xl bg-gray-800/60 backdrop-blur border border-gray-700">
+          <h3 className="text-xl font-semibold text-cyan-400 mb-4 text-center">📊 Slot Status Legend</h3>
+          <div className="flex flex-wrap justify-center gap-6">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-gradient-to-r from-gray-700 to-gray-600 rounded border border-gray-500"></div>
+              <span className="text-sm">✅ Available</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-gradient-to-r from-yellow-500 to-amber-500 rounded border border-yellow-400"></div>
+              <span className="text-sm">⏳ Pending Confirmation</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-gradient-to-r from-red-500 to-pink-500 rounded border border-red-400"></div>
+              <span className="text-sm">🚫 Booked</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-gradient-to-r from-amber-500 to-orange-500 rounded border border-amber-400"></div>
+              <span className="text-sm">⭐ Selected</span>
+            </div>
+          </div>
         </div>
 
+        {/* Tutor Slots */}
+        {Object.entries(grouped).map(([groupKey, slotGroup]) => {
+          const [teacherId, date] = groupKey.split("_");
+          const teacher = teachers[teacherId];
+          const slot = slotGroup[0];
+
+          return (
+            <div key={groupKey} className="mb-8 p-8 rounded-2xl border border-gray-700 bg-gray-900/60 backdrop-blur shadow-2xl hover:shadow-cyan-500/10 transition-all duration-300">
+              {/* Teacher Header */}
+              <div className="flex items-center gap-6 mb-8">
+                <div className="text-4xl w-16 h-16 rounded-full bg-gradient-to-r from-cyan-400 to-purple-500 p-0.5">
+                  <div className="w-full h-full bg-gray-900 rounded-full flex items-center justify-center text-3xl">
+                    {teacher?.avatar || '👨‍🏫'}
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
+                    {teacher?.username || "Expert Tutor"}
+                  </h3>
+                  <p className="text-gray-400 text-lg flex items-center gap-2">
+                    📅 {dayjs(date).format("dddd, MMMM D, YYYY")}
+                    <span className="inline-block w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                    <span className="text-green-400 text-sm">Available</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Slot Details */}
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div className="p-4 rounded-xl bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/20">
+                  <div className="text-2xl mb-2">📚</div>
+                  <div className="text-cyan-400 font-semibold text-sm">Subject</div>
+                  <div className="text-white font-bold">{slot.subject}</div>
+                </div>
+                <div className="p-4 rounded-xl bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20">
+                  <div className="text-2xl mb-2">💰</div>
+                  <div className="text-green-400 font-semibold text-sm">Rate</div>
+                  <div className="text-white font-bold">₹{slot.rate} ({slot.rate_type})</div>
+                </div>
+                <div className="p-4 rounded-xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20">
+                  <div className="text-2xl mb-2">🎓</div>
+                  <div className="text-purple-400 font-semibold text-sm">Grade Level</div>
+                  <div className="text-white font-bold">{slot.grade_level}</div>
+                </div>
+                <div className="p-4 rounded-xl bg-gradient-to-r from-orange-500/10 to-yellow-500/10 border border-orange-500/20">
+                  <div className="text-2xl mb-2">🔗</div>
+                  <div className="text-orange-400 font-semibold text-sm">Platform</div>
+                  <div className="text-white font-bold">{slot.platform}</div>
+                </div>
+              </div>
+
+              {/* Time Slots */}
+              <div className="mb-6">
+                <h4 className="text-2xl font-bold bg-gradient-to-r from-pink-400 to-red-400 bg-clip-text text-transparent mb-4 flex items-center gap-2">
+                  ⏰ Available Time Slots
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+                  {generateTimeBlocks(slot.start_time, slot.end_time).map((block) => {
+                    const status = getSlotStatus(slot.id, block.start);
+                    const isClickable = status === 'available';
+
+                    return (
+                      <button
+                        key={`${slot.id}_${block.start}`}
+                        onClick={() => isClickable && toggleBlock(slot.id, block)}
+                        onMouseEnter={() => setHoveredBlock(`${slot.id}_${block.start}`)}
+                        onMouseLeave={() => setHoveredBlock(null)}
+                        disabled={!isClickable}
+                        className={`
+                          px-4 py-3 rounded-xl border-2 font-semibold text-sm transition-all duration-300 relative
+                          ${getBlockStyles(slot.id, block)}
+                          ${hoveredBlock === `${slot.id}_${block.start}` && isClickable ? 'ring-2 ring-cyan-400' : ''}
+                        `}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span>{block.start} - {block.end}</span>
+                          <span className="text-xs">{getStatusIcon(status)}</span>
+                        </div>
+                        {hoveredBlock === `${slot.id}_${block.start}` && isClickable && (
+                          <div className="absolute -top-2 -right-2 w-4 h-4 bg-cyan-400 rounded-full animate-ping"></div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
         {/* Booking Panel */}
-        <div style={{
-          backgroundColor: 'rgba(17, 24, 39, 0.8)',
-          backdropFilter: 'blur(12px)',
-          border: '1px solid rgba(55, 65, 81, 0.3)',
-          borderRadius: '20px',
-          padding: '32px',
-          position: 'sticky',
-          bottom: '20px'
-        }}>
-          <h3 style={{
-            fontSize: '1.5rem',
-            fontWeight: '600',
-            marginBottom: '20px',
-            color: '#22d3ee',
-            textAlign: 'center'
-          }}>
-            📝 Book Your Session
+        <div className="bg-gradient-to-r from-gray-900/90 to-gray-800/90 backdrop-blur-lg border border-gray-700 rounded-2xl p-8 sticky bottom-5 shadow-2xl">
+          <h3 className="text-3xl font-bold text-center mb-6 bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
+            📝 Complete Your Booking
           </h3>
 
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{
-              display: 'block',
-              fontSize: '1rem',
-              fontWeight: '600',
-              marginBottom: '8px',
-              color: '#e5e7eb'
-            }}>
-              Topic (Optional):
+          <div className="mb-6">
+            <label className="block font-semibold mb-3 text-gray-300 text-lg">
+              📋 Session Topic (Optional):
             </label>
             <input
               type="text"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              placeholder="e.g., Algebra, React Hooks, Organic Chemistry..."
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                border: '1px solid rgba(75, 85, 99, 0.3)',
-                backgroundColor: 'rgba(55, 65, 81, 0.3)',
-                color: 'white',
-                fontSize: '1rem',
-                outline: 'none',
-                transition: 'border-color 0.3s ease'
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#22d3ee'}
-              onBlur={(e) => e.target.style.borderColor = 'rgba(75, 85, 99, 0.3)'}
+              placeholder="e.g., Advanced Algebra, React Hooks, Organic Chemistry..."
+              className="w-full px-6 py-4 rounded-xl border-2 border-gray-600 bg-gray-800/80 text-white placeholder-gray-400 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 outline-none transition-all duration-300"
             />
           </div>
 
           {selectedBlocks.length > 0 && selectedTeacher && (
-            <div style={{
-              backgroundColor: 'rgba(34, 211, 238, 0.1)',
-              border: '1px solid rgba(34, 211, 238, 0.3)',
-              borderRadius: '12px',
-              padding: '20px',
-              marginBottom: '24px'
-            }}>
-              <h4 style={{
-                fontSize: '1.1rem',
-                fontWeight: '600',
-                marginBottom: '12px',
-                color: '#22d3ee'
-              }}>
+            <div className="bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border-2 border-cyan-400/30 rounded-xl p-6 mb-6">
+              <h4 className="text-cyan-300 font-bold text-xl mb-4 flex items-center gap-2">
                 📋 Booking Summary
               </h4>
-              <div style={{ display: 'grid', gap: '8px', fontSize: '0.95rem' }}>
-                <div><strong>Teacher:</strong> {selectedTeacher.username}</div>
-                <div><strong>Date:</strong> {new Date(selectedSlot.date).toLocaleDateString()}</div>
-                <div><strong>Time:</strong> {selectedBlocks[0].start} - {selectedBlocks[selectedBlocks.length - 1].end}</div>
-                <div><strong>Duration:</strong> {selectedBlocks.length * 0.5} hours</div>
-                <div><strong>Rate:</strong> ₹{selectedSlot.rate} ({selectedSlot.rate_type})</div>
+              <div className="grid sm:grid-cols-2 gap-4 text-sm">
+                <div className="space-y-2">
+                  <p className="flex items-center gap-2">
+                    <span className="font-semibold text-cyan-400">👨‍🏫 Teacher:</span>
+                    <span className="text-white">{selectedTeacher.username}</span>
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <span className="font-semibold text-purple-400">📅 Date:</span>
+                    <span className="text-white">{dayjs(selectedSlot.date).format("MMM D, YYYY")}</span>
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <span className="font-semibold text-green-400">⏰ Time:</span>
+                    <span className="text-white">{selectedBlocks[0].start} - {selectedBlocks[selectedBlocks.length - 1].end}</span>
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="flex items-center gap-2">
+                    <span className="font-semibold text-orange-400">⏱️ Duration:</span>
+                    <span className="text-white">{selectedBlocks.length * 0.5} hours</span>
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <span className="font-semibold text-yellow-400">💰 Rate:</span>
+                    <span className="text-white">₹{selectedSlot.rate} ({selectedSlot.rate_type})</span>
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <span className="font-semibold text-pink-400">📚 Subject:</span>
+                    <span className="text-white">{selectedSlot.subject}</span>
+                  </p>
+                </div>
               </div>
             </div>
           )}
@@ -491,56 +431,18 @@ const StudentSlotBrowser = () => {
           <button
             onClick={handleBook}
             disabled={selectedBlocks.length === 0}
-            style={{
-              width: '100%',
-              padding: '16px 24px',
-              borderRadius: '12px',
-              border: 'none',
-              backgroundColor: selectedBlocks.length > 0 ? '#22d3ee' : 'rgba(55, 65, 81, 0.5)',
-              color: 'white',
-              fontSize: '1.1rem',
-              fontWeight: '600',
-              cursor: selectedBlocks.length > 0 ? 'pointer' : 'not-allowed',
-              transition: 'all 0.3s ease',
-              transform: selectedBlocks.length > 0 ? 'translateY(0)' : 'translateY(0)',
-              opacity: selectedBlocks.length > 0 ? 1 : 0.6
-            }}
-            onMouseEnter={(e) => {
-              if (selectedBlocks.length > 0) {
-                e.target.style.backgroundColor = '#0891b2';
-                e.target.style.transform = 'translateY(-2px)';
+            className={`
+              w-full py-6 rounded-xl text-xl font-bold transition-all duration-300 transform
+              ${selectedBlocks.length > 0 
+                ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white hover:from-cyan-600 hover:to-purple-600 hover:shadow-lg hover:shadow-cyan-500/30 hover:scale-105 active:scale-95' 
+                : 'bg-gray-700 text-gray-400 cursor-not-allowed'
               }
-            }}
-            onMouseLeave={(e) => {
-              if (selectedBlocks.length > 0) {
-                e.target.style.backgroundColor = '#22d3ee';
-                e.target.style.transform = 'translateY(0)';
-              }
-            }}
+            `}
           >
             {selectedBlocks.length > 0 ? '✅ Book Selected Slots' : '⚠️ Select Time Slots to Book'}
           </button>
         </div>
       </div>
-
-      {/* Global Styles */}
-      <style jsx>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-        
-        @keyframes bounce {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
-        }
-
-        @media (max-width: 768px) {
-          .time-blocks {
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-          }
-        }
-      `}</style>
     </div>
   );
 };
