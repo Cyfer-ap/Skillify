@@ -1,0 +1,69 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: linear-gradient(to bottom right, #ffffff, #dbeafe);
+
+}
+.login-container {
+  background: linear-gradient(to bottom right, #f0f9ff, #e0f2fe);
+}
+
+.login-box {
+  width: 900px;
+  height: 520px;
+  background-color: #fff;
+}
+
+.left-panel {
+  width: 40%;
+  background: linear-gradient(to bottom right, #0d6efd, #1e3a8a);
+  position: relative;
+}
+
+.right-panel {
+  width: 60%;
+}
+
+/* Optional: Circle Effects (like in image) */
+.left-panel::before,
+.left-panel::after {
+  content: "";
+  position: absolute;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  z-index: 0;
+}
+
+.left-panel::before {
+  width: 150px;
+  height: 150px;
+  bottom: -40px;
+  left: -40px;
+}
+
+.left-panel::after {
+  width: 100px;
+  height: 100px;
+  top: -30px;
+  right: -30px;
+}
+
+.welcome-title {
+  font-size: 5rem !important;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 4px;
+  margin-bottom: 1.5rem;
+  z-index: 1;
+  position: relative;
+}
+
+.welcome-subtext {
+  font-size: 2.2rem !important;
+  color: #e0e7ff;
+  font-weight: 700;
+  z-index: 1;
+  position: relative;
+}
