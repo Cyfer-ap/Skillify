@@ -1,10 +1,18 @@
 import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import TutorsList from "../components/TutorsList";
+import UpcomingSessions from "../components/UpcomingSessions";
+import ClassNotes from "../components/ClassNotes";
+import LearningStats from "../components/LearningStats";
 
 const StudentDashboard = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [hoveredCard, setHoveredCard] = useState(null);
   const [hoveredActivity, setHoveredActivity] = useState(null);
+
+  // Hook for programmatic navigation
+  const navigate = useNavigate();
 
   // Mouse tracking for interactive effects
   useEffect(() => {
@@ -110,17 +118,17 @@ const StudentDashboard = () => {
     padding: '32px',
     cursor: 'pointer',
     transition: 'all 0.4s ease',
-    transform: isVisible 
-      ? hoveredCard === index 
-        ? 'translateY(-8px) scale(1.02)' 
-        : 'translateY(0) scale(1)' 
+    transform: isVisible
+      ? hoveredCard === index
+        ? 'translateY(-8px) scale(1.02)'
+        : 'translateY(0) scale(1)'
       : 'translateY(50px) scale(0.9)',
     opacity: isVisible ? 1 : 0,
     transitionDelay: `${index * 0.1}s`,
     position: 'relative',
     overflow: 'hidden',
-    boxShadow: hoveredCard === index 
-      ? `0 20px 40px rgba(${getColorRgb(item.color)}, 0.3)` 
+    boxShadow: hoveredCard === index
+      ? `0 20px 40px rgba(${getColorRgb(item.color)}, 0.3)`
       : 'none'
   });
 
@@ -136,12 +144,17 @@ const StudentDashboard = () => {
     cursor: 'pointer'
   });
 
+  // Handle card click navigation
+  const handleCardClick = (path) => {
+    navigate(path);
+  };
+
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      backgroundColor: '#000', 
-      color: 'white', 
-      position: 'relative', 
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: '#000',
+      color: 'white',
+      position: 'relative',
       overflow: 'hidden'
     }}>
       {/* Animated Background Elements */}
@@ -194,7 +207,7 @@ const StudentDashboard = () => {
           opacity: 0.6,
           animationDelay: '3s'
         }}></div>
-        
+
         {/* Animated grid background */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.1 }}>
           <div style={{
@@ -214,7 +227,7 @@ const StudentDashboard = () => {
             background: `radial-gradient(circle at ${mousePos.x}px ${mousePos.y}px, rgba(59, 130, 246, 0.1) 0%, transparent 50%)`
           }}></div>
         </div>
-        
+
         {/* Floating particles */}
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
           {[...Array(15)].map((_, i) => (
@@ -238,8 +251,8 @@ const StudentDashboard = () => {
       </div>
 
       {/* Main Content */}
-      <div style={{ 
-        position: 'relative', 
+      <div style={{
+        position: 'relative',
         zIndex: 10,
         padding: '40px 20px',
         maxWidth: '1400px',
@@ -294,6 +307,7 @@ const StudentDashboard = () => {
               style={getCardStyle(index, item)}
               onMouseEnter={() => setHoveredCard(index)}
               onMouseLeave={() => setHoveredCard(null)}
+              onClick={() => handleCardClick(item.path)}
             >
               <div style={{
                 position: 'absolute',
@@ -304,7 +318,7 @@ const StudentDashboard = () => {
                 background: `linear-gradient(135deg, ${item.color}10 0%, transparent 100%)`,
                 pointerEvents: 'none'
               }}></div>
-              
+
               <div style={{ position: 'relative', zIndex: 2 }}>
                 <div style={{
                   fontSize: '2.5rem',
@@ -360,7 +374,7 @@ const StudentDashboard = () => {
           }}>
             📊 Recent Activities
           </h2>
-          
+
           <div style={{
             display: 'grid',
             gap: '16px'
@@ -376,8 +390,8 @@ const StudentDashboard = () => {
                   width: '12px',
                   height: '12px',
                   borderRadius: '50%',
-                  backgroundColor: activity.type === 'session' ? '#10b981' : 
-                                   activity.type === 'assignment' ? '#f59e0b' : 
+                  backgroundColor: activity.type === 'session' ? '#10b981' :
+                                   activity.type === 'assignment' ? '#f59e0b' :
                                    activity.type === 'feedback' ? '#22d3ee' : '#ec4899',
                   flexShrink: 0
                 }}></div>
@@ -448,6 +462,14 @@ const StudentDashboard = () => {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Components Section - Keep these for backward compatibility if needed */}
+        <div style={{ marginTop: '60px', display: 'none' }}>
+          <TutorsList />
+          <UpcomingSessions />
+          <ClassNotes />
+          <LearningStats />
         </div>
       </div>
 
